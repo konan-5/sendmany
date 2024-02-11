@@ -284,7 +284,7 @@ struct Fanout *fanout_create(char *origseed,char *fname)
     sprintf(txidsdir,"sendmany%c%s.%d",dir_delim(),dest,latest);
     makedir(txidsdir);
     printf("All data for this SENDMANY will be in %s, including the seed used.\nSend required total to %s\n",txidsdir,firstaddr);
-    sprintf(seedfname,"%s%dseed",txidsdir,dir_delim());
+    sprintf(seedfname,"%s%cseed",txidsdir,dir_delim());
     if ( (fp= fopen(seedfname,"w")) != 0 )
     {
         fprintf(fp,"%s\n",origseed);
