@@ -257,7 +257,7 @@ int main(int argc, const char * argv[])
     }
     else
     {
-        printf("usage:\n%s <seed> <csvname>\n%s <csvname>\nseed can be actual 55 char seed or filename with seed\ncsvname can be filename of payments CSV or a number for N test payments, using 0 for N will generate random N above 10000\nIf you use the name for seed of 'autogen', a random seed will automatically be generated and used.",argv[0],argv[0]);
+        printf("\nusage:\n%s <seed> <csvname>\n%s <csvname>\nseed can be actual 55 char seed or filename with seed\ncsvname can be filename of payments CSV or a number for N test payments, using 0 for N will generate random N above 10000\nIf you use the name for seed of 'autogen', a random seed will automatically be generated and used.\n\n",argv[0],argv[0]);
         return(0);
     }
     if ( strcmp(origseed,"autogen") == 0 )
