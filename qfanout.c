@@ -318,9 +318,9 @@ struct Fanout *fanout_create(char *origseed,char *fname)
                     memcpy(dest,line,60);
                     dest[60] = 0;
                     amount = atol(line+61);
-                    if ( amount < 0 || checkSumIdentity(dest) == 0 )
+                    if ( amount <= 0 || checkSumIdentity(dest) == 0 || strcmp(dest,firstaddr) == 0 )
                     {
-                        printf("line.%d ERROR (%s)\n",j,dest);
+                        printf("line.%d ERROR (%s) must be valid address and more than 0 QU and not to the Z address\n",j,dest);
                         free(fan);
                         fclose(fp);
                         return(0);
