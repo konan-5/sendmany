@@ -1,4 +1,4 @@
-//
+    //
 //  main.c
 //  sendmany
 
@@ -31,7 +31,7 @@
 #include "qdefines.h"
 #include "qstructs.h"
 #include "qhelpers.c"
-int32_t LATEST_TICK = 1;    // start at nonzero value to trigger initial requests
+int32_t FANDEPTH,LATEST_TICK = 1;    // start at nonzero value to trigger initial requests
 pthread_mutex_t txq_mutex,txq_sendmutex,conn_mutex;
 
 // C code "linked" in by #include
@@ -151,7 +151,7 @@ int reclaim(char *origseed,int32_t numaddrs,int32_t starttick)
     return(nonz);
 }
 
-int sendmany(char *origseed,char *fname)
+int sendmany(char *origseed,char *fname,int32_t autogenflag)
 {
     int32_t i,n,starttick,endtick,numerrors = 0;
     int64_t paid = 0;
@@ -167,7 +167,7 @@ int sendmany(char *origseed,char *fname)
         printf("waiting for starttick\n");
         sleep(3);
     }
-    if ( (fan= fanout_create(origseed,fname)) != 0 )
+    if ( (fan= fanout_create(origseed,fname,autogenflag)) != 0 )
     {
         reclaim(origseed,fan->numdests,starttick);
         fanout_send(fan);
@@ -222,7 +222,7 @@ void testsend(char *seed55,char *destaddr,int64_t amount)
 int main(int argc, const char * argv[])
 {
     FILE *fp;
-    int32_t i,len;
+    int32_t i,len,autogenflag = 0;
     char *origseed,*argstr,line[512];
     uint64_t tmp;
     uint32_t seed;
@@ -257,11 +257,14 @@ int main(int argc, const char * argv[])
     }
     else
     {
-        printf("\nusage:\n%s <seed> <csvname>\n%s <csvname>\nseed can be actual 55 char seed or filename with seed\ncsvname can be filename of payments CSV or a number for N test payments, using 0 for N will generate random N above 10000\nIf you use the name for seed of 'autogen', a random seed will automatically be generated and used.\n\n",argv[0],argv[0]);
-        return(0);
+        origseed = (char *)"seed";
+        argstr = "0";
+        printf("usage:\n%s <seed> <csvname>\n%s <csvname>\nseed can be actual 55 char seed or filename with seed\ncsvname can be filename of payments CSV or a number for N test payments, using 0 for N will generate random N above 10000\nIf you use the name for seed of 'autogen', a random seed will automatically be generated and used.",argv[0],argv[0]);
+        //return(0);
     }
     if ( strcmp(origseed,"autogen") == 0 )
     {
+        autogenflag = 1;
         for (i=0; i<55; i++)
         {
             devurandom((uint8_t *)&tmp,sizeof(tmp));    // slight bias for (2**64-1) % 26 and below
@@ -294,8 +297,10 @@ int main(int argc, const char * argv[])
             fclose(fp);
         }
     }
-    sendmany(origseed,argstr);
+    sendmany(origseed,argstr,autogenflag);
 
     return(0);
 }
 
+
+    
