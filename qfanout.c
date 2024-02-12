@@ -1,4 +1,4 @@
-
+    
 struct Fanout
 {
     char dests[FAN][FAN][FAN][64],txidsdir[512],origseed[64];
@@ -136,7 +136,7 @@ int64_t sendZ_to_depth1(struct txq_item **waitforp,struct Fanout *fan,struct txq
             break;
     }
     printf(" payments.%d total %s\n",n,amountstr(fan->total));
-    *waitforp = txq_queuetx(fan->txidsdir,subseed,&txq_vector,n,fan->epochstart,waitfor,0);
+    *waitforp = txq_queuetx(fan->txidsdir,subseed,&txq_vector,n,fan->epochstart,waitfor,0,1);
     return(sum);
 }
 
@@ -171,7 +171,7 @@ int64_t send_depth1_to_depth2(struct txq_item *waitfors2[25],struct Fanout *fan,
             }
             printf(" sum %s\n",amountstr(sum));
             total += sum;
-            waitfors2[i] = txq_queuetx(fan->txidsdir,subseed,&txq_vector,n,fan->epochstart,waitfor,(i * FAN));
+            waitfors2[i] = txq_queuetx(fan->txidsdir,subseed,&txq_vector,n,fan->epochstart,waitfor,(i * FAN),2);
         }
         else
             break;
@@ -208,7 +208,7 @@ int64_t send_depth2_to_depth3(struct Fanout *fan,struct txq_item *waitfors2[25])
                     }
                 }
                 //printf("\n");
-                txq_queuetx(fan->txidsdir,subseed,&txq_vector,n,fan->epochstart,waitfors2[i],((i*FAN*FAN) + (j*FAN)));
+                txq_queuetx(fan->txidsdir,subseed,&txq_vector,n,fan->epochstart,waitfors2[i],((i*FAN*FAN) + (j*FAN)),3);
             }
         }
     }
@@ -259,6 +259,7 @@ struct Fanout *fanout_init(char *origseed,int32_t n,int32_t epochstart,char *txi
     uint8_t subseed[32];
     fan = (struct Fanout *)calloc(1,sizeof(*fan));
     fan->depth = calc_iFAN(iFAN,0,n);
+    FANDEPTH = fan->depth;
     fan->numdests = n;
     fan->latest = latest;
     fan->epochstart = epochstart;
@@ -268,7 +269,7 @@ struct Fanout *fanout_init(char *origseed,int32_t n,int32_t epochstart,char *txi
     return(fan);
 }
 
-struct Fanout *fanout_create(char *origseed,char *fname)
+struct Fanout *fanout_create(char *origseed,char *fname,int32_t autogenflag)
 {
     struct Fanout *fan = 0;
     uint8_t subseed[32],pubkey[32];
@@ -284,11 +285,14 @@ struct Fanout *fanout_create(char *origseed,char *fname)
     sprintf(txidsdir,"sendmany%c%s.%d",dir_delim(),dest,latest);
     makedir(txidsdir);
     printf("All data for this SENDMANY will be in %s, including the seed used.\nSend required total to %s\n",txidsdir,firstaddr);
-    sprintf(seedfname,"%s%cseed",txidsdir,dir_delim());
-    if ( (fp= fopen(seedfname,"w")) != 0 )
+    if ( autogenflag != 0 )
     {
-        fprintf(fp,"%s\n",origseed);
-        fclose(fp);
+        sprintf(seedfname,"%s%cautogen.seed",txidsdir,dir_delim());
+        if ( (fp= fopen(seedfname,"w")) != 0 )
+        {
+            fprintf(fp,"%s\n",origseed);
+            fclose(fp);
+        }
     }
     if ( fname == 0 || (n= atoi(fname)) == 0 )
     {
@@ -311,16 +315,17 @@ struct Fanout *fanout_create(char *origseed,char *fname)
             j = 0;
             while ( fgets(line,sizeof(line),fp) != 0 )
             {
-                line[strlen(line)-1] = 0;
+                if ( line[strlen(line)-1] == '\n' )
+                    line[strlen(line)-1] = 0;
                 printf("(%s)\n",line);
                 if ( i > 0 )
                 {
                     memcpy(dest,line,60);
                     dest[60] = 0;
                     amount = atol(line+61);
-                    if ( amount <= 0 || checkSumIdentity(dest) == 0 || strcmp(dest,firstaddr) == 0 )
+                    if ( line[60] != ',' || line[61] == 0 || amount <= 0 || checkSumIdentity(dest) == 0 || strcmp(dest,firstaddr) == 0 )
                     {
-                        printf("line.%d ERROR (%s) must be valid address and more than 0 QU and not to the Z address\n",j,dest);
+                        printf("line.%d ERROR (%s) must be valid address and more than 0 QU and not to Z address\n",j,dest);
                         free(fan);
                         fclose(fp);
                         return(0);
@@ -377,3 +382,5 @@ struct Fanout *fanout_create(char *origseed,char *fname)
     printf(" numpayments.%d total %s -> 1st address %s without fees\n",n,amountstr(fan->total),firstaddr);
     return(fan);
 }
+
+    
