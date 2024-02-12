@@ -18,7 +18,7 @@ struct txq_item
     struct pubkeypay payments;
     pthread_t txsend_thread,txcheck_thread;
     char senderaddr[64],txidsdir[512],pendingtxid[64],datastr[MAX_INPUT_SIZE*2 + 1],padc;
-    int32_t datalen,pendingtick,pendingcheck,epochstart,numpayments,sent,starti;
+    int32_t datalen,pendingtick,pendingcheck,epochstart,numpayments,sent,starti,depth;
     int64_t waitforbalance,required,origbalance,extra0;
     struct txq_item *waitfor;
 } *TX_Q[MAXFANS];
@@ -345,7 +345,7 @@ void *txq_check(void *_qp)
         printf("%s starti.%d found %s pend.%d latest.%d\n",qp->senderaddr,qp->starti,qp->pendingtxid,qp->pendingtick,LATEST_TICK);
         if ( (fp= fopen(fname,"w")) != 0 )
         {
-            fprintf(fp,"%d\n%s\n%s\n%s\n",qp->starti,qp->senderaddr,qp->confirmed.txhash,qp->confirmed.rawhex);
+            fprintf(fp,"%d,%d,%d\n%s\n%s\n%s\n",qp->starti,qp->depth,FANDEPTH,qp->senderaddr,qp->confirmed.txhash,qp->confirmed.rawhex);
             fclose(fp);
         }
     }
@@ -434,7 +434,7 @@ int32_t txq_queue_numactive(void)
     return(numactive);
 }
 
-struct txq_item *txq_queuetx(char *txidsdir,uint8_t subseed[32],struct pubkeypay *payments,int32_t n,int32_t epochstart,struct txq_item *waitfor,int32_t starti)
+struct txq_item *txq_queuetx(char *txidsdir,uint8_t subseed[32],struct pubkeypay *payments,int32_t n,int32_t epochstart,struct txq_item *waitfor,int32_t starti,int32_t depth)
 {
     struct txq_item *qp;
     uint8_t privatekey[32];
@@ -461,3 +461,5 @@ uint32_t getlatest(void)
         sleep(1);
     return(LATEST_TICK);
 }
+
+    
