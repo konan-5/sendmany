@@ -1,8 +1,8 @@
-    //
+//
 //  main.c
 //  sendmany
 
-//#define TESTNET
+#define TESTNET
 //#define RECLAIMDEST // reclaims funds in dest.yyy test addresses
 
 #ifdef TESTNET
@@ -15,17 +15,15 @@
 #define TICKOFFSET 3
 #endif
 
-// queue sendrawtx for recvloop
-// save entity data + spectrum hash for cryptographic proof of payment, along with merkle proving
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
+
 #include "K12AndKeyUtil.h"
 
 #include "qdefines.h"
@@ -43,18 +41,12 @@ pthread_mutex_t txq_mutex,txq_sendmutex,conn_mutex;
 #include "qpeers.c"
 #include "qfanout.c"
 
-void *sendtx(void *_rawhex)
-{
-    sendrawtransaction(randpeer(0),DEFAULT_NODE_PORT,(char *)_rawhex);
-    return(0);
-}
 
 int64_t reclaimbalance(int64_t *totalp,char *iFAN,char *addr,uint8_t subseed[32],char *dest,int32_t starttick)
 {
     uint8_t pubkey[32],digest[32];
     char rawhex[4096],txhash[64];
     int64_t balance;
-    //pthread_t sendt;
     getPublicKeyFromIdentity(addr,pubkey);
     balancetickhash(pubkey,starttick);
     if ( (balance= waitforbalance(pubkey,starttick)) != 0 )
@@ -62,7 +54,6 @@ int64_t reclaimbalance(int64_t *totalp,char *iFAN,char *addr,uint8_t subseed[32]
         (*totalp) += balance;
         create_rawtransaction(rawhex,txhash,digest,subseed,dest,balance,0,"");
         printf("reclaim %s %s %s %s\n",iFAN,addr,amountstr(balance),rawhex);
-        //pthread_create(&sendt,NULL,&sendtx,rawhex);
         sendrawtransaction(randpeer(0),DEFAULT_NODE_PORT,rawhex);
     }
     return(balance != 0);
@@ -155,23 +146,25 @@ int sendmany(char *origseed,char *fname,int32_t autogenflag)
 {
     int32_t i,n,starttick,endtick,numerrors = 0;
     int64_t paid = 0;
-    char dest[64];
+    uint8_t subseed[32];
+    char dest[64],firstaddr[64];
     struct Fanout *fan;
     CurrentTickInfo cur;
     TXQ_PAUSE = 1;
     cur = getTickInfoFromNode(randpeer(0),DEFAULT_NODE_PORT);
     printf("T.%ld dur.%d epoch.%d tick.%d aligned.%d misaligned.%d initialTick.%d\n",sizeof(Transaction),cur.tickDuration,cur.epoch,cur.tick,cur.numberOfAlignedVotes,cur.numberOfMisalignedVotes,cur.initialTick);
 
-    while ( (starttick= getlatest()) == 0 )
+    while ( (starttick= getlatest()) <= 1 )
     {
         printf("waiting for starttick\n");
-        sleep(3);
+        sleep(1);
     }
     if ( (fan= fanout_create(origseed,fname,autogenflag)) != 0 )
     {
         reclaim(origseed,fan->numdests,starttick);
         fanout_send(fan);
-        printf("\nTOTAL REQUIRED FOR SENDMANY INCLUDING FEES: %s\nAll data logged in %s\n",amountstr(fan->total),fan->txidsdir);
+        fanout_subseed(origseed,(char *)"Z",subseed,firstaddr);
+        printf("\nSEND TOTAL REQUIRED FOR SENDMANY INCLUDING FEES: %s to %s\nAll data logged in %s\n",amountstr(fan->total),firstaddr,fan->txidsdir);
         TXQ_PAUSE = 0;
         printf("numdests.%d depth.%d total %s sum1 %s, sum2 %s, sum3 %s\n",fan->numdests,fan->depth,amountstr(fan->total),amountstr2(fan->depth1sum),amountstr3(fan->depth2sum),amountstr4(fan->depth3sum));
         while ( (n= txq_queue_numactive()) > 0 )
@@ -183,8 +176,12 @@ int sendmany(char *origseed,char *fname,int32_t autogenflag)
     }
     else
         printf("error creating fanout from %s\n",fname);
-    endtick = getlatest();
-    printf("elapsed %d ticks, generating report\n",endtick - starttick);
+    while ( (endtick= getlatest()) <= 1 )
+    {
+        printf("waiting for endtick\n");
+        sleep(1);
+    }
+    printf("elapsed %d ticks %d %d, generating report\n",endtick - starttick,starttick,endtick);
     if ( Paymentamounts[0] != 0 )
     {
         for (i=0; i<fan->numdests; i++)
@@ -235,10 +232,10 @@ int main(int argc, const char * argv[])
     pthread_mutex_init(&txq_mutex,NULL);
     pthread_mutex_init(&txq_sendmutex,NULL);
 #ifdef TESTNET
-    pthread_t txq_recvloop_thread;
+    pthread_t txq_peerloop_thread;
     uint8_t ipbytes[4];
     ipaddr2ipbytes(DEFAULT_NODE_IP,ipbytes);
-    pthread_create(&txq_recvloop_thread,NULL,&txq_recvloop,ipbytes);
+    pthread_create(&txq_peerloop_thread,NULL,&txq_peerloop,ipbytes);
 #else
     pthread_t initpeers_thread;
     pthread_create(&initpeers_thread,NULL,&initpeers,0);
@@ -260,7 +257,9 @@ int main(int argc, const char * argv[])
         origseed = (char *)"seed";
         argstr = "0";
         printf("usage:\n%s <seed> <csvname>\n%s <csvname>\nseed can be actual 55 char seed or filename with seed\ncsvname can be filename of payments CSV or a number for N test payments, using 0 for N will generate random N above 10000\nIf you use the name for seed of 'autogen', a random seed will automatically be generated and used.",argv[0],argv[0]);
-        //return(0);
+#ifdef __LINUX__
+        return(0);
+#endif
     }
     if ( strcmp(origseed,"autogen") == 0 )
     {
