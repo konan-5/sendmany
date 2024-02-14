@@ -1,4 +1,4 @@
-
+    
 
 char dir_delim(void)
 {
@@ -74,7 +74,11 @@ void devurandom(uint8_t *buf,long len)
 #ifdef __APPLE__
 #define FMT64 "%lld"
 #else
+#ifdef EMSCRIPTEN
+#define FMT64 "%lld"
+#else
 #define FMT64 "%ld"
+#endif
 #endif
 
 char *amountstr(uint64_t amount)
@@ -105,9 +109,5 @@ char *amountstr4(uint64_t amount)
     return(str);
 }
 
-void pubkey2addr(uint8_t pubkey[32],char *addr)
-{
-    getIdentityFromPublicKey(pubkey,addr,false);
-    addr[60] = 0;
-}
 
+    
