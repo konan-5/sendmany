@@ -1,9 +1,11 @@
+
 //
 //  txqueue.cpp
 //  fanout
 //
 
-uint32_t LATEST_UTIME,LATEST_NUMACTIVE,NUMFAILS,NUMGOOD,TXQ_PAUSE = 1;
+uint32_t LATEST_UTIME;
+int32_t txq_Numtx,CUR_tick,NUMCUR_tick,LATEST_NUMACTIVE,NUMFAILS,NUMGOOD,TXQ_PAUSE = 1;
 
 struct txq_done
 {
@@ -18,11 +20,11 @@ struct txq_item
     struct pubkeypay payments;
     pthread_t txsend_thread,txcheck_thread;
     char senderaddr[64],txidsdir[512],pendingtxid[64],datastr[MAX_INPUT_SIZE*2 + 1],padc;
-    int32_t datalen,pendingtick,pendingcheck,epochstart,numpayments,sent,starti,depth;
-    int64_t waitforbalance,required,origbalance,extra0;
+    int32_t datalen,pendingtick,pendingcheck,epochstart,numpayments,sent,starti,depth,createdtick;
+    int64_t waitforbalance,required,origbalance;
+    uint64_t sendflags;
     struct txq_item *waitfor;
 } *TX_Q[MAXFANS];
-int32_t txq_Numtx;
 
 struct balancetick
 {
@@ -49,7 +51,7 @@ struct balancetick *balancetickhash(uint8_t pubkey[32],int32_t addflag)
             if ( addflag == 0 )
             {
                 pthread_mutex_unlock(&txq_mutex);
-                return(0);
+                return(bp);
             }
             else
             {
@@ -126,25 +128,29 @@ int64_t waitforbalance(uint8_t pubkey[32],int32_t mintick)
     return(bp->balance);
 }
 
-void *txq_recvloop(void *_ipbytes)
+void *txq_peerloop(void *_ipbytes)
 {
     struct balancetick *bp;
+    struct txq_item *qp;
     struct EntityRequest ER;
     struct quheader H;
     char ipaddr[16],addr[64];
+    uint64_t peermask;
     uint32_t prevutime,iphash;
-    int32_t prevtick,sock,sz,recvbyte,ptr,bufsize = 2 * 1024 * 1024;
+    int32_t prevtick,sock,sz,datalen,recvbyte,ptr,bufsize = 2 * 1024 * 1024;
     static uint8_t *buf;
-    uint8_t *ipbytes = _ipbytes;
+    uint8_t reqbuf[MAX_INPUT_SIZE*2],*ipbytes = _ipbytes;
     prevtick = 0;
     prevutime = 0;
+    peermask = 1LL << (rand() % 64);
     iphash = *(uint32_t *)ipbytes;
     if ( buf == 0 )
         buf = (uint8_t *)calloc(1,bufsize);
     sprintf(ipaddr,"%d.%d.%d.%d",ipbytes[0],ipbytes[1],ipbytes[2],ipbytes[3]);
+    printf("start peer loop.%s\n",ipaddr);
     if ( (sock= myconnect(ipaddr,DEFAULT_NODE_PORT)) < 0 )
     {
-        printf("txq_recvloop error connecting to %s\n",ipaddr);
+        printf("txq_peerloop error connecting to %s\n",ipaddr);
         return(0);
     }
     printf(">>>>>>>>>>>>>>>>>>> start recvloop sock.%d ipaddr %d.%d.%d.%d\n",sock,ipbytes[0],ipbytes[1],ipbytes[2],ipbytes[3]);
@@ -197,6 +203,17 @@ void *txq_recvloop(void *_ipbytes)
                 if ( n != txq_Numbalances )
                     printf("%s unexpected n.%d vs numbalances.%d\n",ipaddr,n,txq_Numbalances);
                 prevtick = LATEST_TICK;
+            }
+            for (i=0; i<txq_Numtx; i++)
+            {
+                if ( (qp= TX_Q[i]) != 0 && (qp->sendflags & peermask) != 0 )
+                {
+                    datalen = (int32_t)strlen(qp->confirmed.rawhex) / 2;
+                    hexToByte(qp->confirmed.rawhex,&reqbuf[sizeof(struct quheader)],datalen);
+                    *(struct quheader *)reqbuf = quheaderset(BROADCAST_TRANSACTION,sizeof(struct quheader) + datalen);
+                    sock = socksend(ipaddr,sock,reqbuf,sizeof(struct quheader) + datalen);
+                    qp->sendflags ^= peermask;
+                }
             }
         }
         if ( (recvbyte= receiveall(sock,buf,bufsize)) > 0 )
@@ -252,7 +269,7 @@ void *txq_recvloop(void *_ipbytes)
                     //printf("peer ipaddrs %s\n",ipaddr);
                 }
                 else
-                    printf("%s txq_recvloop received %d, size.%d unhandled type.%d\n",ipaddr,recvbyte,sz,H._type);
+                    printf("%s txq_peerloop received %d, size.%d unhandled type.%d\n",ipaddr,recvbyte,sz,H._type);
 
                 ptr += sz;
             }
@@ -263,26 +280,24 @@ void *txq_recvloop(void *_ipbytes)
     return(0);
 }
 
-int32_t CUR_tick,NUMCUR_tick;
-
-void *txq_send(void *_qp)
+void *txq_send(void *_qp) // originally in dedicated thread, but now polled
 {
     struct txq_item *qp = (struct txq_item *)_qp;
+    struct balancetick *bp;
     int64_t required = SENDMANYFEE;
     int32_t i;
     qp->pendingtick = LATEST_TICK + TICKOFFSET;
     for (i=0; i<qp->numpayments; i++)
-    {
         required += qp->payments.amounts[i];
-        //printf("%s ",amountstr(qp->payments.amounts[i]));
-    }
     qp->required = required;
-    //printf("required %s\n",amountstr(required));
-    while ( (qp->origbalance= waitforbalance(qp->senderpubkey,LATEST_TICK)) < required )
+    if ( (bp= balancetickhash(qp->senderpubkey,0)) == 0 || (qp->origbalance= bp->balance) < required )
     {
-        if ( (rand() % 5) == 0 )
-            printf("%s %s does not have %s\n",qp->senderaddr,amountstr2(qp->origbalance),amountstr(required));
-        sleep(1);
+        while ( (qp->origbalance= waitforbalance(qp->senderpubkey,qp->createdtick)) < required )
+        {
+            if ( (rand() % 5) == 0 )
+                printf("%s %s does not have %s\n",qp->senderaddr,amountstr2(qp->origbalance),amountstr(required));
+            usleep(100000);
+        }
     }
     qp->datalen = sizeof(qp->payments);
     qp->sent++;
@@ -311,19 +326,20 @@ void *txq_send(void *_qp)
     pthread_mutex_unlock(&txq_sendmutex);
 
     create_rawsendmany(qp->confirmed.rawhex,qp->pendingtxid,qp->txdigest,qp->senderseed,qp->pendingtick,&qp->payments,qp->numpayments);
-    sendrawtransaction(randpeer(0),DEFAULT_NODE_PORT,qp->confirmed.rawhex);
+    qp->sendflags = -1;
+    
+    //sendrawtransaction(randpeer(0),DEFAULT_NODE_PORT,qp->confirmed.rawhex);
 #ifndef TESTNET
-    sendrawtransaction(randpeer(0),DEFAULT_NODE_PORT,qp->confirmed.rawhex);
-    sendrawtransaction(randpeer(0),DEFAULT_NODE_PORT,qp->confirmed.rawhex);
+    //sendrawtransaction(randpeer(0),DEFAULT_NODE_PORT,qp->confirmed.rawhex);
+    //sendrawtransaction(randpeer(0),DEFAULT_NODE_PORT,qp->confirmed.rawhex);
 #endif
 
     waitforbalance(qp->senderpubkey,0);
     return(0);
 }
 
-void *txq_check(void *_qp)
+void txq_check(struct txq_item *qp)
 {
-    struct txq_item *qp = (struct txq_item *)_qp;
     int64_t balance;
     char fname[1024];
     FILE *fp;
@@ -349,7 +365,6 @@ void *txq_check(void *_qp)
             fclose(fp);
         }
     }
-    return(0);
 }
 
 void *txq_loop(void *threads)
@@ -384,10 +399,8 @@ void *txq_loop(void *threads)
             }
             else if ( qp->pendingtick == 0 )
             {
-                memset(qp->pendingtxid,0,sizeof(qp->pendingtxid));
-                pthread_create(&qp->txsend_thread,NULL,&txq_send,qp);
-                //txq_send(qp);
-                //break;
+                if ( (bp= balancetickhash(qp->senderpubkey,1)) != 0 && bp->balance >= qp->required && bp->tick > qp->createdtick )
+                    txq_send(qp);
             }
             else
             {
@@ -405,9 +418,17 @@ void *txq_loop(void *threads)
                     }
                 }
             }
-            if ( dispflag != 0 )
+            if ( dispflag != 0 && qp->pendingtick != 0 )
             {
-                printf("now.%d txQ[%d]: pendingtick.%d confirmed.%d sent.%d pendingcheck.%d numpending.%d G.%d F.%d\n",LATEST_TICK,i,qp->pendingtick,qp->confirmed.txtick,qp->sent,qp->pendingcheck,numpending,NUMGOOD,NUMFAILS);
+                int64_t balance;
+                printf("now.%d txQ[%d]: pendingtick.%d confirmed.%d sent.%d pendingcheck.%d numpending.%d G.%d F.%d ",LATEST_TICK,i,qp->pendingtick,qp->confirmed.txtick,qp->sent,qp->pendingcheck,numpending,NUMGOOD,NUMFAILS);
+                if ( i == 0 )
+                {
+                    balance = waitforbalance(qp->senderpubkey,0);
+                    if ( qp->required > balance )
+                        printf("send %s to %s",amountstr(qp->required - balance),qp->senderaddr);
+                }
+                printf("\n");
                 lastutime = LATEST_UTIME + 5;
                 dispflag = 0;
             }
@@ -449,6 +470,8 @@ struct txq_item *txq_queuetx(char *txidsdir,uint8_t subseed[32],struct pubkeypay
     qp->epochstart = epochstart;
     qp->waitfor = waitfor;
     qp->starti = starti;
+    qp->createdtick = LATEST_TICK;
+    qp->depth = depth;
     TX_Q[txq_Numtx] = qp;
     txq_Numtx++;
     //printf("added tx to queue.%d\n",txq_Numtx);
