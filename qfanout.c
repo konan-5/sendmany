@@ -284,7 +284,7 @@ struct Fanout *fanout_create(char *origseed,char *fname,int32_t autogenflag)
     makedir((char *)"sendmany");
     sprintf(txidsdir,"sendmany%c%s.%d",dir_delim(),dest,latest);
     makedir(txidsdir);
-    printf("All data for this SENDMANY will be in %s, including the seed used.\nSend required total to %s\n",txidsdir,firstaddr);
+    printf("All data for this SENDMANY will be in %s\nSend required total to %s\n",txidsdir,firstaddr);
     if ( autogenflag != 0 )
     {
         sprintf(seedfname,"%s%cautogen.seed",txidsdir,dir_delim());
@@ -369,10 +369,10 @@ struct Fanout *fanout_create(char *origseed,char *fname,int32_t autogenflag)
     }
     fprintf(stderr,"init %d: ",n);
     for (j=0; j<n; j++)
-        balancetickhash(Paymentpubkeys[j],0);
+        balancetickhash(Paymentpubkeys[j],latest);
     for (j=0; j<n; j++)
     {
-        balancetickhash(Paymentpubkeys[j],0);
+        balancetickhash(Paymentpubkeys[j],latest);
         if ( (j % 100) == 0 )
             fprintf(stderr,".");
         pubkey2addr(Paymentpubkeys[j],dest);
