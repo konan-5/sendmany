@@ -3,14 +3,52 @@
 
 //#include <cstring>
 #include <immintrin.h>
+//#include <smmintrin.h>
 //#include <cstdint>
 //#include <string>
 
+/*#include <xmmintrin.h> //SSE
+#include <emmintrin.h> //SSE2
+#include <pmmintrin.h> //SSE3
+#include <tmmintrin.h> //SSSE3
+#include <smmintrin.h> //SSE4.1
+#include <nmmintrin.h> //SSE4.2*/
+
+
+#ifdef EMSCRIPTEN
+typedef struct { int32_t regs[8]; } __m256i;
+
+uint8_t _addcarry_u64 (uint8_t c_in,uint64_t a,uint64_t b,uint64_t *outp)
+{
+    *outp = a + b + c_in;
+    return(a > ~b || a == ~b && c_in);
+}
+
+uint8_t _subborrow_u64 (uint8_t c_in,uint64_t a,uint64_t b,uint64_t *outp)
+{
+    *outp = (a - b - c_in);
+    return(a < b || a == b && c_in);
+}
+
+static uint64_t __shiftleft128 (uint64_t lo,uint64_t hi,uint8_t dist)
+{
+    return (lo >> (64 - dist)) | (hi << dist);
+}
+
+static uint64_t __shiftright128 (uint64_t lo,uint64_t hi,uint8_t dist)
+{
+    //dist &= 0x3f;
+    return (hi << (64 - dist)) | (lo >> dist);
+}
+#endif
+
 #define MAX_INPUT_SIZE 1024
+#ifndef bool
 #define bool int
 #define false 0
 #define true 1
- 
+#endif
+
 #define ROL64(a, offset) ((((unsigned long long)a) << offset) ^ (((unsigned long long)a) >> (64 - offset)))
 
 #define KeccakF1600RoundConstant0 0x000000008000808bULL
@@ -1011,29 +1049,27 @@ static uint64_t _umul128(uint64_t a, uint64_t b, long long unsigned int *hi)
 }
 
 
+#ifndef EMSCRIPTEN
 static uint64_t __shiftleft128 (uint64_t  LowPart, uint64_t HighPart, uint8_t Shift)
 {
     uint64_t ret;
-
     __asm__ ("shld {%[Shift],%[LowPart],%[HighPart]|%[HighPart], %[LowPart], %[Shift]}"
             : [ret] "=r" (ret)
     : [LowPart] "r" (LowPart), [HighPart] "0" (HighPart), [Shift] "Jc" (Shift)
     : "cc");
-
     return ret;
 }
 
 static uint64_t __shiftright128 (uint64_t  LowPart, uint64_t HighPart, uint8_t Shift)
 {
     uint64_t ret;
-
     __asm__ ("shrd {%[Shift],%[HighPart],%[LowPart]|%[LowPart], %[HighPart], %[Shift]}"
             : [ret] "=r" (ret)
     : [LowPart] "0" (LowPart), [HighPart] "r" (HighPart), [Shift] "Jc" (Shift)
     : "cc");
-
     return ret;
 }
+#endif
 #endif
 
 static void fpmul1271(felm_t a, felm_t b, felm_t c)
@@ -2396,6 +2432,12 @@ void deriveaddr(char *seed,char *extrastr,uint8_t subseed[32],uint8_t privatekey
     getPrivateKeyFromSubSeed(subseed,privatekey);
     getPublicKeyFromPrivateKey(privatekey,publickey);
     getIdentityFromPublicKey(publickey,addr,false);
+    addr[60] = 0;
+}
+
+void pubkey2addr(uint8_t pubkey[32],char *addr)
+{
+    getIdentityFromPublicKey(pubkey,addr,false);
     addr[60] = 0;
 }
 
