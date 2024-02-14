@@ -58,7 +58,7 @@ int32_t addpeer(char *origipaddr,int32_t epoch)
     if ( I.epoch == epoch )
     {
         pthread_t *ptr = calloc(1,sizeof(*ptr));
-        pthread_create(ptr,NULL,&txq_recvloop,IPbytes[Numpeers]);
+        pthread_create(ptr,NULL,&txq_peerloop,IPbytes[Numpeers]);
         printf("Numpeers.%d: %s add %s\n",Numpeers,cmpaddr,origipaddr);
         Numpeers++;
         return(Numpeers);
