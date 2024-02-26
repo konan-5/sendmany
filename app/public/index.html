@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QWallet Command Line Interface</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
+
+<body>
+    <div id="container">
+        <div id="input-form">
+            <textarea type="text" id="command-input" placeholder="Enter qwallet command"></textarea>
+            <button id="send-command" onclick="submitCommand()">Send</button>
+        </div>
+        <div id="console-output" class="scrollable-box"></div>
+        <div id="error-output" class="scrollable-box"></div>
+    </div>
+
+    <script>
+        function submitCommand() {
+            const command = $("#command-input").val();
+            // console.log(command)
+            // $.post(
+            //     '/command',
+            //     { command },
+            //     (res, status) => { console.log(res, status) }
+            // )
+            $.ajax({
+                type: "POST",
+                url: "/command",
+                data: { command },
+                success: function (response) {
+                    // Handle success
+                    $("#console-output").text = response;
+                    console.log("Success:", response);
+                },
+                error: function (xhr, status, error) {
+                    // Handle error
+                    console.log("Error:", xhr.responseText);
+                },
+                complete: function (xhr, status) {
+                    // Execute actions regardless of success or error
+                    // console.log("Request complete");
+                }
+            });
+            // $.ajax({
+            //     type: "POST",
+            //     url: "/test",
+            //     data: { command },
+            //     success: function (response) {
+            //         // Handle success
+            //         $("#console-output").text = response;
+            //         console.log("Success:", response);
+            //     },
+            //     error: function (xhr, status, error) {
+            //         // Handle error
+            //         console.log("Error:", xhr.responseText);
+            //     },
+            //     complete: function (xhr, status) {
+            //         // Execute actions regardless of success or error
+            //         // console.log("Request complete");
+            //     }
+            // });
+        }
+    </script>
+</body>
+
+</html>
