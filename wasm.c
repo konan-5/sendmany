@@ -34,8 +34,12 @@ int32_t LATEST_TICK;
 
 int qwallet(char *args,char *result)
 {
+    int i;
     printf("args.(%s)\n",args);
-    strcpy(result,"this is the result\n");
+    for (i=0; i<1000000; i++)
+        result[i] = 'Z';
+    result[i] = 0;
+    //strcpy(result,"this is the result\n");
     return(0);
 }
 
