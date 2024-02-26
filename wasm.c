@@ -28,8 +28,8 @@ int32_t LATEST_TICK;
 #include "qdefines.h"
 #include "qstructs.h"
 #include "qhelpers.c"
-#include "qkeys.c"
-#include "qtx.c"
+//#include "qkeys.c"
+//#include "qtx.c"
 
 
 int qwallet(char *args,char *result)
@@ -40,7 +40,7 @@ int qwallet(char *args,char *result)
 }
 
 
-int oldmain(int argc, const char * argv[])
+/*int oldmain(int argc, const char * argv[])
 {
     int32_t i;
     uint8_t digest[32],subseed[32],privatekey[32],publickey[32];
@@ -64,7 +64,7 @@ int oldmain(int argc, const char * argv[])
         printf("0x%s %s\n",rawhex,dest);
     }
     return(0);
- }
+ }*/
 
 
 #include <emscripten.h>
