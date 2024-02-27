@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QWallet Command Line Interface</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="./a.out.js"></script>
+</head>
+
+<body>
+    <div id="container">
+        <div id="input-form">
+            <textarea type="text" id="command-input" placeholder="Enter qwallet command"></textarea>
+            <button id="send-command" onclick="submitCommand()">Send</button>
+        </div>
+        <div id="console-output" class="scrollable-box"></div>
+        <div id="error-output" class="scrollable-box"></div>
+    </div>
+
+    <script>
+        function submitCommand() {
+            const functionName = $("#command-input").val();
+            try {
+                const Module = createModule()
+                const result = Module.ccall(functionName, 'number', ['string'], ["asdf"])
+                $("#console-output").text(`${result}`);
+                $("#error-output").text("");
+            } catch (error) {
+                $("#console-output").text("");
+                $("#error-output").text(`${error}`);
+            }
+        }
+    </script>
+</body>
+
+</html>
