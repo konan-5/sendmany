@@ -1,3 +1,10 @@
+
+var createModule = (() => {
+  var _scriptDir = typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : undefined;
+  if (typeof __filename !== 'undefined') _scriptDir ||= __filename;
+  return (
+function(moduleArg = {}) {
+
 // include: shell.js
 // The Module object: Our interface to the outside world. We import
 // and export values on it. There are various ways Module can be used:
@@ -12,7 +19,14 @@
 // after the generated code, you will need to define   var Module = {};
 // before the code. Then that object will be used in the code, and you
 // can continue to use Module afterwards as well.
-var Module = typeof Module != 'undefined' ? Module : {};
+var Module = moduleArg;
+
+// Set up the promise that indicates the Module is initialized
+var readyPromiseResolve, readyPromiseReject;
+Module['ready'] = new Promise((resolve, reject) => {
+  readyPromiseResolve = resolve;
+  readyPromiseReject = reject;
+});
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
@@ -49,17 +63,6 @@ var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIR
 
 // ENVIRONMENT_IS_PTHREAD=true will have been preset in worker.js. Make it false in the main runtime thread.
 var ENVIRONMENT_IS_PTHREAD = Module['ENVIRONMENT_IS_PTHREAD'] || false;
-
-// In MODULARIZE mode _scriptDir needs to be captured already at the very top of the page immediately when the page is parsed, so it is generated there
-// before the page load. In non-MODULARIZE modes generate it here.
-var _scriptDir = (typeof document != 'undefined' && document.currentScript) ? document.currentScript.src : undefined;
-
-if (ENVIRONMENT_IS_WORKER) {
-  _scriptDir = self.location.href;
-}
-else if (ENVIRONMENT_IS_NODE) {
-  _scriptDir = __filename;
-}
 
 // `/` should be present at the end if `scriptDirectory` is not empty
 var scriptDirectory = '';
@@ -123,16 +126,7 @@ readAsync = (filename, onload, onerror, binary = true) => {
 
   arguments_ = process.argv.slice(2);
 
-  if (typeof module != 'undefined') {
-    module['exports'] = Module;
-  }
-
-  process.on('uncaughtException', (ex) => {
-    // suppress ExitStatus exceptions from showing an error
-    if (ex !== 'unwind' && !(ex instanceof ExitStatus) && !(ex.context instanceof ExitStatus)) {
-      throw ex;
-    }
-  });
+  // MODULARIZE will export the module in the proper place outside, we don't need to export here
 
   quit_ = (status, toThrow) => {
     process.exitCode = status;
@@ -151,6 +145,11 @@ if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
     scriptDirectory = self.location.href;
   } else if (typeof document != 'undefined' && document.currentScript) { // web
     scriptDirectory = document.currentScript.src;
+  }
+  // When MODULARIZE, this JS may be executed later, after document.currentScript
+  // is gone, so we saved it, and we use it here instead of any other info.
+  if (_scriptDir) {
+    scriptDirectory = _scriptDir;
   }
   // blob urls look like blob:http://site.com/etc/etc and we cannot infer anything from them.
   // otherwise, slice off the final part of the url to find the script directory.
@@ -549,6 +548,7 @@ function abort(what) {
   /** @suppress {checkTypes} */
   var e = new WebAssembly.RuntimeError(what);
 
+  readyPromiseReject(e);
   // Throw the error whether or not MODULARIZE is set because abort is used
   // in code paths apart from instantiation where an exception is expected
   // to be thrown when abort is called.
@@ -654,7 +654,8 @@ function createWasm() {
       return Module['instantiateWasm'](info, receiveInstance);
     } catch(e) {
       err(`Module.instantiateWasm callback failed with error: ${e}`);
-        return false;
+        // If instantiation fails, reject the module ready promise.
+        readyPromiseReject(e);
     }
   }
 
@@ -1974,6 +1975,8 @@ function check_timer() { return Module.timer; }
     };
 
 
+
+
 PThread.init();;
 
 // proxiedFunctionTable specifies the list of functions that can be called
@@ -2025,7 +2028,7 @@ var wasmImports = {
   /** @export */
   fd_write: _fd_write,
   /** @export */
-  memory: wasmMemory,
+  memory: wasmMemory || Module['wasmMemory'],
   /** @export */
   start_timer: start_timer
 };
@@ -2070,6 +2073,7 @@ Module['wasmMemory'] = wasmMemory;
 Module['keepRuntimeAlive'] = keepRuntimeAlive;
 Module['ccall'] = ccall;
 Module['ExitStatus'] = ExitStatus;
+Module['PThread'] = PThread;
 
 
 var calledRun;
@@ -2111,6 +2115,10 @@ function run() {
   }
 
   if (ENVIRONMENT_IS_PTHREAD) {
+    // The promise resolve function typically gets called as part of the execution
+    // of `doRun` below. The workers/pthreads don't execute `doRun` so the
+    // creation promise can be resolved, marking the pthread-Module as initialized.
+    readyPromiseResolve(Module);
     initRuntime();
     startWorker(Module);
     return;
@@ -2136,6 +2144,7 @@ function run() {
 
     preMain();
 
+    readyPromiseResolve(Module);
     if (Module['onRuntimeInitialized']) Module['onRuntimeInitialized']();
 
     if (shouldRunNow) callMain();
@@ -2173,3 +2182,13 @@ run();
 
 
 // end include: postamble.js
+
+
+  return moduleArg
+}
+);
+})();
+if (typeof exports === 'object' && typeof module === 'object')
+  module.exports = createModule;
+else if (typeof define === 'function' && define['amd'])
+  define([], () => createModule);

@@ -1,4 +1,3 @@
-const importModule = require('./a.out.js');
 const express = require('express')
 const app = express()
 const path = require('path');
@@ -10,31 +9,15 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/index.html'));
+    res.send("QUBIC")
 });
 
-app.post('/command', (req, res) => {
-    const cmd = req.body.command;
-    const cmdArray = cmd.split(" ")
-    const functionName = cmdArray[0]
-    console.log(functionName)
-    let statusCode = 200
-    function command () {
-        try {
-            const result = importModule.ccall(functionName, 'number', ['string', 'string'], ["wecome to qubic", 'b']);
-            return `${result}`
-        } catch (error) {
-            statusCode = 500;
-            return `${error}`;
-        }
-    };
-    const result = command()
-    console.log(result)
-    res.status(statusCode).send(result)
-})
-
-app.post('/test', (req, res) => {
-    res.status(200).send('hello')
+app.get('/test', (req, res) => {
+    console.log('sssssssssssssss')
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    console.log('bbbbbbbbbbbbbb')
+    res.sendFile(path.join(__dirname, 'public/index.html'));
 })
 
 app.listen(port, () => {
