@@ -13,7 +13,7 @@ cd app
 npm install
 ```
 
-### build wasm.c
+### Build wasm.c
 ```
 make build
 ```
