@@ -32,15 +32,12 @@ int32_t LATEST_TICK;
 //#include "qtx.c"
 
 
-int qwallet(char *args,char *result)
+char *qwallet(char *args)
 {
     int i;
     printf("args.(%s)\n",args);
-    for (i=0; i<1000000; i++)
-        result[i] = 'Z';
-    result[i] = 0;
-    //strcpy(result,"this is the result\n");
-    return(0);
+
+    return("{ \"result\":0, \"display\":\"this is the result\"}");
 }
 
 
