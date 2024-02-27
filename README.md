@@ -22,3 +22,5 @@ make build
 ```
 npm start
 ```
+- Open this link
+http://localhost:3000/test
