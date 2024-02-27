@@ -1,38 +1,14 @@
-// Import the generated JavaScript file
-const { program } = require('commander');
-const importModule = require('./a.out.js');
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
+const createModule = require('./public/a.out.js');
 
-// Use Commander to parse command-line arguments
-// program
-//     .option('--fn <type>', 'function name to call')
-//     .option('--rt <type>', 'function name to call')
+const args = process.argv.splice(2)
 
-// program.parse(process.argv);
-
-// const options = program.opts();
-
-// const functionName = options.fn;
-// let returnType = options.rt;
-
-// if (!functionName) {
-//     console.log('No function name provided. Please use the --name option.');
-//     process.exit(1);
-// }
-
-// if (!returnType) {
-//     returnType = 'string';
-// }
-async function ls() {
-    const { stdout, stderr } = await exec('ls');
-    console.log('stdout:', stdout);
-    console.log('stderr:', stderr);
+function createStringArray(n) {
+    return new Array(n).fill('string');
 }
-ls();
-importModule.onRuntimeInitialized = async function () {
-    // Now it's safe to call the compiled functions
-    const result = await importModule.ccall('qwallet', 'number', ['string', 'string'], ["a", "b"]);
-    console.log(result)
-    process.exit(1);
-};
+
+const stringArray = createStringArray(args.length);
+
+const Module = createModule()
+const result = Module.ccall("qwallet", 'string', stringArray, args)
+// const result_json = JSON.parse(result)
+console.log(`_^_${result}_^_`)
