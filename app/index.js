@@ -13,10 +13,8 @@ app.get('/', (req, res) => {
 });
 
 app.get('/test', (req, res) => {
-    console.log('sssssssssssssss')
     res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    console.log('bbbbbbbbbbbbbb')
     res.sendFile(path.join(__dirname, 'public/index.html'));
 })
 

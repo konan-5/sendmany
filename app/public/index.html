@@ -3,37 +3,57 @@
 
 <head>
     <meta charset="UTF-8">
+    <title>Commander.js Log Stream</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QWallet Command Line Interface</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="./a.out.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const socket = io();
+            const logContainer = document.getElementById('console-output');
+
+            socket.on('log', function (msg) {
+                const regex = /_\^_(.*?)_\^_/;
+                const match = msg.match(regex);
+                if (match) {
+                    const result = JSON.parse(match[1]);
+                    $("#result-output").html(`Result: ${result.result} </br> ${result.display}`);
+                } else {
+                    const messageElement = document.createElement('div');
+                    messageElement.textContent = msg;
+                    if (logContainer.firstChild) {
+                        logContainer.insertBefore(messageElement, logContainer.firstChild);
+                    } else {
+                        logContainer.appendChild(messageElement);
+                    }
+                }
+
+            });
+
+            $("#send-command").click(() => {
+                const command = $("#command-input").val();
+                socket.emit('run', command);
+            })
+            $("#stop-command").click(() => {
+                socket.emit('stop', 'test message');
+            })
+        });
+    </script>
 </head>
 
 <body>
     <div id="container">
         <div id="input-form">
             <textarea type="text" id="command-input" placeholder="Enter qwallet command"></textarea>
-            <button id="send-command" onclick="submitCommand()">Send</button>
+            <button id="send-command">Send</button>
+            <button id="stop-command">Stop</button>
         </div>
+        <div id="result-output" class="scrollable-box"></div>
         <div id="console-output" class="scrollable-box"></div>
-        <div id="error-output" class="scrollable-box"></div>
     </div>
 
-    <script>
-        function submitCommand() {
-            const functionName = $("#command-input").val();
-            try {
-                const Module = createModule()
-                const result = Module.ccall(functionName, 'number', ['string'], ["asdf"])
-                $("#console-output").text(`${result}`);
-                $("#error-output").text("");
-            } catch (error) {
-                $("#console-output").text("");
-                $("#error-output").text(`${error}`);
-            }
-        }
-    </script>
 </body>
 
 </html>
