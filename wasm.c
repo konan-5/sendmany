@@ -256,7 +256,7 @@ int main()
       if ( check_timer() )
       {
           //printf("timer happened!\n");
-               qwallet((char *)"login passwordB,bip39");
+            //   qwallet((char *)"login passwordB,bip39");
         /*char *retstr = qwallet((char *)"login password");
           printf("got retstr.(%s)\n",retstr);
           EM_ASM(
