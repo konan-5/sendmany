@@ -90,8 +90,8 @@ int32_t accountcodec(char *rw,char *password,uint8_t subseed[32])
     char fname[512];
     int32_t i,retval = -1;
     KangarooTwelve((uint8_t *)password,(int32_t)strlen(password),salt,32);
-    sprintf(fname,"%cqwallet%c%s",dir_delim(),dir_delim(),password);
-    //sprintf(fname,"%s",password);
+    //sprintf(fname,"%cqwallet%c%s",dir_delim(),dir_delim(),password);
+    sprintf(fname,"%s",password);
     //printf("check (%s) %s\n",fname,rw);
     if ( (fp= fopen(fname,rw)) != 0 )
     {
