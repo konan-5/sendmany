@@ -2,7 +2,11 @@
 
 char dir_delim(void)
 {
+#ifdef __WINDOWS__
+    return('\\');
+#else
     return('/');
+#endif
 }
 
 void makedir(const char *dirname)
