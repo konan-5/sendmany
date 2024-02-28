@@ -23,7 +23,18 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
+#include <netdb.h>
+#include <assert.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+//#include <SDL.h>
+#ifdef EMSCRIPTEN
 #include <emscripten.h>
+#include <emscripten/websocket.h>
+#include <emscripten/fetch.h>
+#include <emscripten/threading.h>
+#include <emscripten/posix_socket.h>
+#endif
 
 #include "K12AndKeyUtil.h"
 
@@ -45,10 +56,11 @@ pthread_mutex_t txq_mutex,txq_sendmutex,conn_mutex;
 #include "qsendmany.c"
 #include "qtests.c"
 
+#define JSON_BUFSIZE 4096
 
 char *wasm_result(int32_t retval,char *displaystr,int32_t seedpage)
 {
-    static char json[65536];
+    static char json[JSON_BUFSIZE];
     sprintf(json,"{\"result\":%d,\"display\":\"%s\",\"seedpage\":%d}",retval,displaystr,seedpage);
     return(json);
 }
@@ -90,12 +102,12 @@ int32_t accountcodec(char *rw,char *password,uint8_t subseed[32])
     char fname[512];
     int32_t i,retval = -1;
     KangarooTwelve((uint8_t *)password,(int32_t)strlen(password),salt,32);
-    //sprintf(fname,"%cqwallet%c%s",dir_delim(),dir_delim(),password);
-    sprintf(fname,"%s",password);
+    sprintf(fname,"%cqwallet%c%s",dir_delim(),dir_delim(),password);
+    //sprintf(fname,"%s",password);
     //printf("check (%s) %s\n",fname,rw);
     if ( (fp= fopen(fname,rw)) != 0 )
     {
-        printf("opened (%s) %s\n",fname,rw);
+        //printf("opened (%s) %s\n",fname,rw);
         if ( strcmp(rw,"wb") == 0 )
         {
             for (i=0; i<sizeof(salt); i++)
@@ -110,7 +122,7 @@ int32_t accountcodec(char *rw,char *password,uint8_t subseed[32])
         }
         fclose(fp);
     }
-    printf("%s -> retval %d\n",rw,retval);
+    //printf("%s -> retval %d\n",rw,retval);
     if ( retval == 32 )
         return(0);
     return(retval);
@@ -169,7 +181,6 @@ char *loginfunc(char **argv,int32_t argc)
     if ( retval < 0 )
     {
         memset(seed,0xff,sizeof(seed));
-        printf("error -5\n");
         return(wasm_result(-5,"error creating encrypted account",0));
     }
     getIdentityFromPublicKey(publickey,addr,false);
@@ -177,6 +188,8 @@ char *loginfunc(char **argv,int32_t argc)
     printf("loginfunc got (%s) -> seed {%s} %s\n",password,seed,addr);
     return(wasm_result(retval,seed,1));
 }
+
+char QWALLET_ARGS[64][JSON_BUFSIZE],QWALLET_RESULTS[(sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS))][JSON_BUFSIZE],QWALLET_lasti;
 
 struct qcommands
 {
@@ -187,15 +200,45 @@ struct qcommands
     { "addseed", addseedfunc },
     { "login", loginfunc },
 };
-char QWALLET_ARGS[1024];
 
 char *qwallet(char *_args)
+{
+    int32_t i,pendingid;
+    if ( strncmp(_args,(char *)"status",6) == 0 )
+    {
+        pendingid = atoi(_args+7) % (sizeof(QWALLET_RESULTS)/sizeof(*QWALLET_RESULTS));
+        if ( QWALLET_RESULTS[pendingid][0] == 0 )
+        {
+            if ( QWALLET_ARGS[pendingid][0] == 0 )
+                return(wasm_result(pendingid,"no command pending",0));
+            else return(wasm_result(pendingid,"command pending",0));
+        }
+        else
+        {
+            memset(QWALLET_ARGS[pendingid],0,sizeof(QWALLET_ARGS[pendingid]));
+            return(QWALLET_RESULTS[pendingid]);
+        }
+    }
+    for (i=0; i<(sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS)); i++)
+    {
+        pendingid = (QWALLET_lasti + i + 1) % (sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS));
+        if ( QWALLET_ARGS[pendingid][0] == 0 )
+        {
+            strcpy(QWALLET_ARGS[pendingid],_args);
+            memset(QWALLET_RESULTS[i],0,sizeof(QWALLET_RESULTS[i]));
+            QWALLET_lasti = pendingid;
+            return(wasm_result(pendingid,"command queued",0));
+        }
+    }
+    return(wasm_result(-6,"command queue full",0));
+}
+
+char *_qwallet(char *_args)
 {
     int32_t i,j,len,argc = 0;
     char *argv[16],cmd[64],args[1024];
     args[sizeof(args)-1] = 0;
     strncpy(args,_args,sizeof(args)-1);
-    strcpy(QWALLET_ARGS,_args);
     for (i=0; args[i]!=0&&i<sizeof(cmd)-1; i++)
     {
         cmd[i] = args[i];
@@ -233,17 +276,125 @@ char *qwallet(char *_args)
 }
 
 #ifdef EMSCRIPTEN
+static EMSCRIPTEN_WEBSOCKET_T bridgeSocket = 0;
 
 EM_JS(void, start_timer, (),
     {
         Module.timer = false;
-        setTimeout(function() { Module.timer = true; }, 5000);
+        setTimeout(function() { Module.timer = true; }, 500);
     }
 );
 EM_JS(bool, check_timer, (), { return Module.timer; });
 
+EM_BOOL WebSocketOpen(int eventType, const EmscriptenWebSocketOpenEvent *e, void *userData)
+{
+    printf("open(eventType=%d, userData=%ld)\n", eventType, (long)userData);
+
+    emscripten_websocket_send_utf8_text(e->socket, "hello on the other side");
+
+    char data[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+    emscripten_websocket_send_binary(e->socket, data, sizeof(data));
+
+    emscripten_websocket_close(e->socket, 0, 0);
+    return 0;
+}
+
+EM_BOOL WebSocketClose(int eventType, const EmscriptenWebSocketCloseEvent *e, void *userData)
+{
+    printf("close(eventType=%d, wasClean=%d, code=%d, reason=%s, userData=%ld)\n", eventType, e->wasClean, e->code, e->reason, (long)userData);
+    return 0;
+}
+
+EM_BOOL WebSocketError(int eventType, const EmscriptenWebSocketErrorEvent *e, void *userData)
+{
+    printf("error(eventType=%d, userData=%ld)\n", eventType, (long)userData);
+    return 0;
+}
+
+EM_BOOL WebSocketMessage(int eventType, const EmscriptenWebSocketMessageEvent *e, void *userData)
+{
+    printf("message(eventType=%d, userData=%ld, data=%p, numBytes=%d, isText=%d)\n", eventType, (long)userData, e->data, e->numBytes, e->isText);
+    if (e->isText)
+        printf("text data: \"%s\"\n", e->data);
+    else
+    {
+        printf("binary data:");
+        for(int i = 0; i < e->numBytes; ++i)
+            printf(" %02X", e->data[i]);
+        printf("\n");
+
+        emscripten_websocket_delete(e->socket);
+        exit(0);
+    }
+    return 0;
+}
+
+/*typedef struct {
+    Uint32 host;
+    Uint16 port;
+} IPaddress;*/
+
+void *mainloop(void *arg)
+{
+    /*IPaddress ip;
+    if(SDLNet_ResolveHost(&ip, NULL, 8099) == -1) {
+        fprintf(stderr, "ER: SDLNet_ResolveHost: %d\n", SDLNet_GetError());
+        exit(-1);
+    }
+     
+    int32_t server_socket = SDLNet_TCP_Open(&ip);
+    if(server_socket == NULL) {
+        fprintf(stderr, "ER: SDLNet_TCP_Open: %d\n", SDLNet_GetError());
+        exit(-1);
+    }*/
+    
+    /*emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+    strcpy(attr.requestMethod, "GET");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_SYNCHRONOUS;
+    emscripten_fetch_t *fetch = emscripten_fetch(&attr, "file.dat"); // Blocks here until the operation is complete.
+    if (fetch->status == 200) {
+      printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
+      // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
+    } else {
+      printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
+    }
+    emscripten_fetch_close(fetch);*/
+    /*
+    if (!emscripten_websocket_is_supported())
+    {
+        printf("WebSockets are not supported, cannot continue!\n");
+        //exit(1);
+    }
+    printf("step1\n");
+
+    EmscriptenWebSocketCreateAttributes attr;
+    emscripten_websocket_init_create_attributes(&attr);
+
+    attr.url = "ws://146.59.150.157:22841";
+
+    EMSCRIPTEN_WEBSOCKET_T socket = emscripten_websocket_new(&attr);
+    if (socket <= 0)
+    {
+        printf("WebSocket creation failed, error code %d!\n", (EMSCRIPTEN_RESULT)socket);
+        exit(1);
+    }
+    printf("step2 sock.%d\n",socket);
+
+    emscripten_websocket_set_onopen_callback(socket, (void*)42, WebSocketOpen);
+    emscripten_websocket_set_onclose_callback(socket, (void*)43, WebSocketClose);
+    emscripten_websocket_set_onerror_callback(socket, (void*)44, WebSocketError);
+    emscripten_websocket_set_onmessage_callback(socket, (void*)45, WebSocketMessage);*/
+    return(0);
+}
+
+int32_t MAIN_count;
+
 int main()
 {
+    int32_t i;
+    printf("MAIN CALLED.%d\n",MAIN_count);
+    MAIN_count++;
     MAIN_THREAD_EM_ASM(
            FS.mkdir('/qwallet');
            // FS.mount(IDBFS, {}, '/qwallet');
@@ -251,27 +402,31 @@ int main()
            FS.syncfs(true, function (err) {
              assert(!err); });
     );
-
+    pthread_t mainloop_thread;
+    pthread_create(&mainloop_thread,NULL,&mainloop,0);
     start_timer();
     while ( 1 )
     {
-      if ( check_timer() )
-      {
-          //printf("timer happened!\n");
-          //qwallet((char *)"login passwordB,bip39");
-        /*char *retstr = qwallet((char *)"login password");
-          printf("got retstr.(%s)\n",retstr);
-          EM_ASM(
-                 FS.syncfs(function (err) {
-                assert(!err);
-              });
-          );*/
-           printf("QWALLET_ARGS (%s)\n",QWALLET_ARGS);
-          fflush(stdout);
-          start_timer();
-          //return 0;
-      }
-      emscripten_sleep(1000);
+        if ( check_timer() )
+        {
+            start_timer();
+        }
+        for (i=0; i<(sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS)); i++)
+        {
+            if ( QWALLET_ARGS[i][0] != 0 && QWALLET_RESULTS[i][0] == 0 )
+            {
+                printf("QWALLET_ARGS[%d] (%s)\n",i,QWALLET_ARGS[i]);
+                char *retstr = _qwallet(QWALLET_ARGS[i]);
+                printf("Q.%d returns.(%s)\n",i,retstr);
+                strcpy(QWALLET_RESULTS[i],retstr);
+                MAIN_THREAD_EM_ASM(
+                       FS.syncfs(function (err) {
+                      assert(!err);
+                    });
+                );
+             }
+        }
+        emscripten_sleep(100);
     }
 }
 #else
