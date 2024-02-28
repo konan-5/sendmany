@@ -123,9 +123,17 @@ char *loginfunc(char **argv,int32_t argc)
     uint64_t tmp;
     uint8_t privatekey[32],publickey[32],subseed[32];
     char addr[64],seed[512],*password,bipwords[24][16],*retstr,*extrastr = (char *)"";
+    if (argv == 0 )
+    {
+        password = (char *)"newpass";
+        argc = 1;
+    }
+    else
+    {
     if ( argc == 0 )
         return(wasm_result(-3,"login needs password",0));
     password = argv[0];
+    }
     devurandom(subseed,32);
     if ( accountcodec("rb",password,subseed) == 0 )
     {
@@ -192,6 +200,7 @@ char *qwallet(char *_args)
 {
     int32_t i,j,len,argc = 0;
     char *argv[16],cmd[64],args[1024];
+    return(loginfunc(0,0));
     args[sizeof(args)-1] = 0;
     strncpy(args,_args,sizeof(args)-1);
     for (i=0; args[i]!=0&&i<sizeof(cmd)-1; i++)
