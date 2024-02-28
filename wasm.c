@@ -43,7 +43,9 @@ pthread_mutex_t txq_mutex,txq_sendmutex,conn_mutex;
 #include "qfanout.c"
 #include "qsendmany.c"
 #include "qtests.c"
-
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#endif
 
 char *wasm_result(int32_t retval,char *displaystr,int32_t seedpage)
 {
@@ -224,11 +226,9 @@ char *qwallet(char *_args)
                 printf("{%s} ",argv[j]);
             printf("argc.%d %s\n",argc,cmd);
             char *retstr = (*QCMDS[i].func)(argv,argc);
-           EM_ASM(
-                 FS.syncfs(function (err) {
-                assert(!err);
-              });
-          );
+#ifdef EMSCRIPTEN
+           EM_ASM(FS.syncfs(function (err) { assert(!err); }); );
+#endif
            return(retstr);
         }
     }
@@ -236,7 +236,6 @@ char *qwallet(char *_args)
 }
 
 #ifdef EMSCRIPTEN
-#include <emscripten.h>
 
 EM_JS(void, start_timer, (),
     {
