@@ -40,9 +40,9 @@
             $("#stop-command").click(() => {
                 socket.emit('stop', 'test message');
             })
-            $("#start-command").click(() => {
-                socket.emit('start', 'test message');
-            })
+            // $("#start-command").click(() => {
+            socket.emit('start', 'test message');
+            // })
         });
     </script>
 </head>
@@ -51,7 +51,7 @@
     <div id="container">
         <div id="input-form">
             <textarea type="text" id="command-input" placeholder="Enter qwallet command"></textarea>
-            <button id="start-command">Start</button>
+            <!-- <button id="start-command">Start</button> -->
             <button id="send-command">Send</button>
             <button id="stop-command">Stop</button>
         </div>
