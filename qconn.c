@@ -1,4 +1,4 @@
-    
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -125,5 +125,3 @@ int32_t socksend(char *ipaddr,int32_t sock,uint8_t *buf,int32_t len)
 }
 
 
-
-    

@@ -1,13 +1,10 @@
-//
-//  main.c
-//  sendmany
+
 
 #define TESTNET
-//#define RECLAIMDEST // reclaims funds in dest.yyy test addresses
 
 #ifdef TESTNET
 #define DEFAULT_NODE_PORT 31841
-#define DEFAULT_NODE_IP ((char *)"57.129.19.155") //193.135.9.63") //
+#define DEFAULT_NODE_IP ((char *)"193.135.9.63")
 #define TICKOFFSET 3
 #else
 #define DEFAULT_NODE_PORT 21841
@@ -28,6 +25,7 @@
 
 #include "qdefines.h"
 #include "qstructs.h"
+#include "qkeys.c"
 #include "qhelpers.c"
 int32_t FANDEPTH,LATEST_TICK = 1;    // start at nonzero value to trigger initial requests
 pthread_mutex_t txq_mutex,txq_sendmutex,conn_mutex;
@@ -40,181 +38,9 @@ pthread_mutex_t txq_mutex,txq_sendmutex,conn_mutex;
 #include "qthreads.c"
 #include "qpeers.c"
 #include "qfanout.c"
+#include "qsendmany.c"
+#include "qtests.c"
 
-
-int64_t reclaimbalance(int64_t *totalp,char *iFAN,char *addr,uint8_t subseed[32],char *dest,int32_t starttick)
-{
-    uint8_t pubkey[32],digest[32];
-    char rawhex[4096],txhash[64];
-    int64_t balance;
-    getPublicKeyFromIdentity(addr,pubkey);
-    balancetickhash(pubkey,starttick);
-    if ( (balance= waitforbalance(pubkey,starttick)) != 0 )
-    {
-        (*totalp) += balance;
-        create_rawtransaction(rawhex,txhash,digest,subseed,dest,balance,0,"");
-        printf("reclaim %s %s %s %s\n",iFAN,addr,amountstr(balance),rawhex);
-        sendrawtransaction(randpeer(0),DEFAULT_NODE_PORT,rawhex);
-    }
-    return(balance != 0);
-}
-
-int reclaim(char *origseed,int32_t numaddrs,int32_t starttick)
-{
-    uint8_t subseed[32],pubkey[32];
-    int32_t i,nonz = 0;
-    int64_t reclaimed = 0;
-    char origaddr[64],addr[64],iFAN[6];
-#ifdef RECLAIMDEST
-    char destiFAN[64];
-#endif
-    fanout_subseed(origseed,(char *)"",subseed,origaddr);
-    //printf("%s -> %s\n",origseed,origaddr);
-    fanout_subseed(origseed,(char *)"Z",subseed,addr);
-    //if ( reclaimbalance(&reclaimed,(char *)"Z",addr,subseed,origaddr,starttick) != 0 )
-    //    nonz++;
-    if ( numaddrs > 0 )
-    {
-        for (i=0; i<25; i++)
-        {
-            calc_iFAN(iFAN,i,25);
-            fanout_subseed(origseed,iFAN,subseed,addr);
-            getPublicKeyFromIdentity(addr,pubkey);
-            balancetickhash(pubkey,starttick);
-        }
-        for (i=0; i<25*25; i++)
-        {
-            if ( i/FAN >= numaddrs )
-                break;
-            calc_iFAN(iFAN,i,25*25);
-            fanout_subseed(origseed,iFAN,subseed,addr);
-            getPublicKeyFromIdentity(addr,pubkey);
-            balancetickhash(pubkey,starttick);
-        }
-#ifdef RECLAIMDEST
-        for (i=0; i<25*25*25; i++)
-        {
-            if ( i >= numaddrs )
-                break;
-            calc_iFAN(iFAN,i,25*25*25);
-            sprintf(destiFAN,"dest.%s",iFAN);
-            fanout_subseed(origseed,destiFAN,subseed,addr);
-            getPublicKeyFromIdentity(addr,pubkey);
-            balancetickhash(pubkey,starttick);
-        }
-#endif
-        printf("add to hashtable\n");
-        for (i=0; i<25; i++)
-        {
-            calc_iFAN(iFAN,i,25);
-            fprintf(stderr,"%s ",iFAN);
-            fanout_subseed(origseed,iFAN,subseed,addr);
-            if ( reclaimbalance(&reclaimed,iFAN,addr,subseed,origaddr,starttick) != 0 )
-                nonz++;
-        }
-        printf("level 1\n");
-        for (i=0; i<25*25; i++)
-        {
-            if ( i/FAN >= numaddrs )
-                break;
-            calc_iFAN(iFAN,i,25*25);
-            fprintf(stderr,"%s ",iFAN);
-            fanout_subseed(origseed,iFAN,subseed,addr);
-            if ( reclaimbalance(&reclaimed,iFAN,addr,subseed,origaddr,starttick) != 0 )
-                nonz++;
-        }
-#ifdef RECLAIMDEST
-        for (i=0; i<25*25*25; i++)
-        {
-            if ( i >= numaddrs )
-                break;
-            calc_iFAN(iFAN,i,25*25*25);
-            sprintf(destiFAN,"dest.%s",iFAN);
-            fprintf(stderr,"%s ",destiFAN);
-            fanout_subseed(origseed,destiFAN,subseed,addr);
-            if ( reclaimbalance(&reclaimed,destiFAN,addr,subseed,origaddr,starttick) != 0 )
-                nonz++;
-        }
-#endif
-        printf("level 2\n");
-    }
-    printf("issued reclaims from %d addrs for %s\n",nonz,amountstr(reclaimed));
-    return(nonz);
-}
-
-int sendmany(char *origseed,char *fname,int32_t autogenflag)
-{
-    int32_t i,n,starttick,endtick,numerrors = 0;
-    int64_t paid = 0;
-    uint8_t subseed[32];
-    char dest[64],firstaddr[64];
-    struct Fanout *fan;
-    CurrentTickInfo cur;
-    TXQ_PAUSE = 1;
-    cur = getTickInfoFromNode(randpeer(0),DEFAULT_NODE_PORT);
-    printf("T.%ld dur.%d epoch.%d tick.%d aligned.%d misaligned.%d initialTick.%d\n",sizeof(Transaction),cur.tickDuration,cur.epoch,cur.tick,cur.numberOfAlignedVotes,cur.numberOfMisalignedVotes,cur.initialTick);
-
-    while ( (starttick= getlatest()) <= 1 )
-    {
-        printf("waiting for starttick\n");
-        sleep(1);
-    }
-    if ( (fan= fanout_create(origseed,fname,autogenflag)) != 0 )
-    {
-        reclaim(origseed,fan->numdests,starttick);
-        fanout_send(fan);
-        fanout_subseed(origseed,(char *)"Z",subseed,firstaddr);
-        printf("\nSEND TOTAL REQUIRED FOR SENDMANY INCLUDING FEES: %s to %s\nAll data logged in %s\n",amountstr(fan->total),firstaddr,fan->txidsdir);
-        TXQ_PAUSE = 0;
-        printf("numdests.%d depth.%d total %s sum1 %s, sum2 %s, sum3 %s\n",fan->numdests,fan->depth,amountstr(fan->total),amountstr2(fan->depth1sum),amountstr3(fan->depth2sum),amountstr4(fan->depth3sum));
-        while ( (n= txq_queue_numactive()) > 0 )
-        {
-            if ( (rand() % 20) == 0 )
-                printf("num remaining in TXQ.%d\n",n);
-            sleep(1);
-        }
-    }
-    else
-        printf("error creating fanout from %s\n",fname);
-    while ( (endtick= getlatest()) <= 1 )
-    {
-        printf("waiting for endtick\n");
-        sleep(1);
-    }
-    printf("elapsed %d ticks %d %d, generating report\n",endtick - starttick,starttick,endtick);
-    if ( Paymentamounts[0] != 0 )
-    {
-        for (i=0; i<fan->numdests; i++)
-            balancetickhash(Paymentpubkeys[i],1);
-        for (i=0; i<fan->numdests; i++)
-            Endingbalances[i] = waitforbalance(Paymentpubkeys[i],endtick);
-        for (i=0; i<fan->numdests; i++)
-        {
-            pubkey2addr(Paymentpubkeys[i],dest);
-            if ( Paymentamounts[i] - (Endingbalances[i] - Startingbalances[i]) != 0 )
-            {
-                printf("paid %s: %s error %s\n",dest,amountstr(Endingbalances[i] - Startingbalances[i]),amountstr2(Paymentamounts[i] - (Endingbalances[i] - Startingbalances[i])));
-                numerrors++;
-            }
-            else paid += (Endingbalances[i] - Startingbalances[i]);
-        }
-    }
-    reclaim(origseed,fan->numdests,LATEST_TICK);
-    endtick = getlatest();
-    printf("total elapsed %d ticks, numerror.%d paid %s totalcost %s numsendmany.%d numpaid.%d\n",endtick - starttick,numerrors,amountstr(paid),amountstr2(fan->total),txq_Numtx,fan->numdests);
-    free(fan);
-    return(0);
-}
-
-void testsend(char *seed55,char *destaddr,int64_t amount)
-{
-    char rawhex[4096],txidstr[64],senderaddr[64],iFAN[6];
-    uint8_t txdigest[32],subseed[32];
-    create_rawtransaction(rawhex,txidstr,txdigest,(uint8_t *)seed55,destaddr,amount,0,"");
-    fanout_subseed(seed55,iFAN,subseed,senderaddr);
-    printf("created transaction send from %s to %s %ld, %s rawhex.%s\n",senderaddr,destaddr,(long)amount,txidstr,rawhex);
-    //sendrawtransaction(randpeer(0,0),DEFAULT_NODE_PORT,rawhex);
-}
 
 int main(int argc, const char * argv[])
 {
@@ -228,6 +54,8 @@ int main(int argc, const char * argv[])
     Balances = (struct balancetick *)calloc(txq_HASHSIZE,sizeof(*Balances));
     devurandom((uint8_t *)&seed,sizeof(seed));
     srand(seed);
+    timebasedepoch(&i,&i);
+    printf("LATEST_TICK.%d\n",LATEST_TICK);
     pthread_mutex_init(&conn_mutex,NULL);
     pthread_mutex_init(&txq_mutex,NULL);
     pthread_mutex_init(&txq_sendmutex,NULL);
@@ -296,10 +124,9 @@ int main(int argc, const char * argv[])
             fclose(fp);
         }
     }
+    //testrandom(origseed);
+    //reclaim(origseed,25*25*25,1);
     sendmany(origseed,argstr,autogenflag);
-
     return(0);
 }
 
-
-    
