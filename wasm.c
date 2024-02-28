@@ -43,9 +43,7 @@ pthread_mutex_t txq_mutex,txq_sendmutex,conn_mutex;
 #include "qfanout.c"
 #include "qsendmany.c"
 #include "qtests.c"
-#ifdef EMSCRIPTEN
-#include <emscripten.h>
-#endif
+
 
 char *wasm_result(int32_t retval,char *displaystr,int32_t seedpage)
 {
@@ -202,7 +200,7 @@ char *qwallet(char *_args)
             break;
     }
     cmd[i] = 0;
-    //printf("args.(%s) -> cmd [%s]\n",args,cmd);
+    printf("args.(%s) -> cmd [%s]\n",args,cmd);
     for (i=0; i<sizeof(QCMDS)/sizeof(*QCMDS); i++)
     {
         if ( strcmp(cmd,QCMDS[i].command) == 0 )
@@ -225,17 +223,14 @@ char *qwallet(char *_args)
             for (j=0; j<argc; j++)
                 printf("{%s} ",argv[j]);
             printf("argc.%d %s\n",argc,cmd);
-            char *retstr = (*QCMDS[i].func)(argv,argc);
-#ifdef EMSCRIPTEN
-           EM_ASM(FS.syncfs(function (err) { assert(!err); }); );
-#endif
-           return(retstr);
+            return((*QCMDS[i].func)(argv,argc));
         }
     }
     return(wasm_result(-1,"unknown command",0));
 }
 
 #ifdef EMSCRIPTEN
+#include <emscripten.h>
 
 EM_JS(void, start_timer, (),
     {
@@ -260,11 +255,20 @@ int main()
     {
       if ( check_timer() )
       {
-          printf("timer happened!\n");
+          /*printf("timer happened!\n");
+          //qwallet((char *)"addseed    this is a simulated bip39 seed,extrastuff");
+          char *retstr = qwallet((char *)"login password");
+          printf("got retstr.(%s)\n",retstr);
+          qwallet((char *)"login passwordB,bip39");
+          EM_ASM(
+                 FS.syncfs(function (err) {
+                assert(!err);
+              });
+          );*/
           start_timer();
           //return 0;
       }
-      printf("sleeping...\n");
+      //printf("sleeping...\n");
       emscripten_sleep(1000);
     }
 }
