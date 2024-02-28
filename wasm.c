@@ -235,7 +235,7 @@ char *qwallet(char *_args)
 EM_JS(void, start_timer, (),
     {
         Module.timer = false;
-        setTimeout(function() { Module.timer = true; }, 5000);
+        setTimeout(function() { Module.timer = true; }, 1000);
     }
 );
 EM_JS(bool, check_timer, (), { return Module.timer; });
@@ -263,7 +263,8 @@ int main()
                  FS.syncfs(function (err) {
                 assert(!err);
               });
-          );
+          );*/
+              fflush(stdout);
           start_timer();
           //return 0;
       }
