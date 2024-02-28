@@ -11,7 +11,7 @@ io.on('connection', (socket) => {
     console.log('a user connected');
     let child = null;
 
-    socket.on('run', (msg) => {
+    socket.on('start', (msg) => {
         try {
             child.kill()
         } catch (error) {
@@ -31,6 +31,10 @@ io.on('connection', (socket) => {
         child.on('close', (code) => {
             // socket.emit('log', `Child process exited with code ${code}`);
         });
+    })
+
+    socket.on('run', (msg) => {
+        socket.broadcast.emit('qwallet', msg);
     })
 
     socket.on('stop', () => {
