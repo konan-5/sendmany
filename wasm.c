@@ -257,7 +257,7 @@ int main()
       {
           //printf("timer happened!\n");
           /*char *retstr = qwallet((char *)"login password");
-          printf("got retstr.(%s)\n",retstr);*/
+          printf("got retstr.(%s)\n",retstr);
           qwallet((char *)"login passwordB,bip39");
           EM_ASM(
                  FS.syncfs(function (err) {
