@@ -187,6 +187,7 @@ struct qcommands
     { "addseed", addseedfunc },
     { "login", loginfunc },
 };
+char QWALLET_ARGS[1024];
 
 char *qwallet(char *_args)
 {
@@ -194,6 +195,7 @@ char *qwallet(char *_args)
     char *argv[16],cmd[64],args[1024];
     args[sizeof(args)-1] = 0;
     strncpy(args,_args,sizeof(args)-1);
+    strcpy(QWALLET_ARGS,_args);
     for (i=0; args[i]!=0&&i<sizeof(cmd)-1; i++)
     {
         cmd[i] = args[i];
@@ -268,7 +270,7 @@ int main()
           start_timer();
           //return 0;
       }
-      //printf("sleeping...\n");
+      printf("QWALLET_ARGS (%s)\n",QWALLET_ARGS);
       emscripten_sleep(1000);
     }
 }
