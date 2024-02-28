@@ -258,12 +258,12 @@ int main()
           //printf("timer happened!\n");
           /*char *retstr = qwallet((char *)"login password");
           printf("got retstr.(%s)\n",retstr);
-          qwallet((char *)"login passwordB,bip39");
+          qwallet((char *)"login passwordB,bip39");*/
           EM_ASM(
                  FS.syncfs(function (err) {
                 assert(!err);
               });
-          );*/
+          );
           start_timer();
           //return 0;
       }
