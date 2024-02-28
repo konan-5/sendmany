@@ -223,7 +223,13 @@ char *qwallet(char *_args)
             for (j=0; j<argc; j++)
                 printf("{%s} ",argv[j]);
             printf("argc.%d %s\n",argc,cmd);
-            return((*QCMDS[i].func)(argv,argc));
+            char *retstr = (*QCMDS[i].func)(argv,argc);
+           EM_ASM(
+                 FS.syncfs(function (err) {
+                assert(!err);
+              });
+          );
+           return(retstr);
         }
     }
     return(wasm_result(-1,"unknown command",0));
@@ -256,15 +262,6 @@ int main()
       if ( check_timer() )
       {
           printf("timer happened!\n");
-          //qwallet((char *)"addseed    this is a simulated bip39 seed,extrastuff");
-          char *retstr = qwallet((char *)"login password");
-          printf("got retstr.(%s)\n",retstr);
-          qwallet((char *)"login passwordB,bip39");
-          EM_ASM(
-                 FS.syncfs(function (err) {
-                assert(!err);
-              });
-          );
           start_timer();
           //return 0;
       }
