@@ -10,6 +10,6 @@ function createStringArray(n) {
 const stringArray = ['string']
 
 const Module = createModule()
-const result = Module.ccall("qwallet", 'string', stringArray, args.join(" "))
+const result = Module.ccall("qwallet", 'string', stringArray, [args.join(" ")])
 // const result_json = JSON.parse(result)
 console.log(`_^_${result}_^_`)
