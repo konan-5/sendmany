@@ -256,15 +256,15 @@ int main()
       if ( check_timer() )
       {
           //printf("timer happened!\n");
-          /*char *retstr = qwallet((char *)"login password");
+               qwallet((char *)"login passwordB,bip39");
+        /*char *retstr = qwallet((char *)"login password");
           printf("got retstr.(%s)\n",retstr);
-          qwallet((char *)"login passwordB,bip39");
           EM_ASM(
                  FS.syncfs(function (err) {
                 assert(!err);
               });
           );*/
-              fflush(stdout);
+           fflush(stdout);
           start_timer();
           //return 0;
       }
