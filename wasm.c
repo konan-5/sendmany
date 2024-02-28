@@ -258,7 +258,7 @@ int main()
       if ( check_timer() )
       {
           //printf("timer happened!\n");
-           qwallet((char *)"login passwordB,bip39");
+          //qwallet((char *)"login passwordB,bip39");
         /*char *retstr = qwallet((char *)"login password");
           printf("got retstr.(%s)\n",retstr);
           EM_ASM(
@@ -266,11 +266,11 @@ int main()
                 assert(!err);
               });
           );*/
-           fflush(stdout);
+           printf("QWALLET_ARGS (%s)\n",QWALLET_ARGS);
+          fflush(stdout);
           start_timer();
           //return 0;
       }
-      printf("QWALLET_ARGS (%s)\n",QWALLET_ARGS);
       emscripten_sleep(1000);
     }
 }
