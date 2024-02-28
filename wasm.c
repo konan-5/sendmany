@@ -246,8 +246,8 @@ int main()
 {
     EM_ASM(
            FS.mkdir('/qwallet');
-           FS.mount(NODEFS, {}, '/qwallet');
-           //FS.mount(NODEFS, { root: '.' }, '/qwallet');
+           //FS.mount(IDBFS, {}, '/qwallet');
+           FS.mount(NODEFS, { root: '.' }, '/qwallet');
            FS.syncfs(true, function (err) {
              assert(!err); });
     );
