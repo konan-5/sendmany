@@ -134,7 +134,7 @@ char *loginfunc(char **argv,int32_t argc)
         getPublicKeyFromPrivateKey(privatekey,publickey);
         memset(privatekey,0xff,sizeof(privatekey));
         pubkey2addr(publickey,addr);
-        printf("found encrpted file for (%s) -> %s\n",password,addr);
+        printf("found encrypted file for (%s) -> %s\n",password,addr);
         return(wasm_result(0,addr,0));
     }
     printf("create encrypted file for %s\n",password);
@@ -174,7 +174,7 @@ char *loginfunc(char **argv,int32_t argc)
     }
     getIdentityFromPublicKey(publickey,addr,false);
     addr[60] = 0;
-    printf("loginfunc got (%s) -> seed {%s} %s\n",password,seed,addr);
+    fprintf(stderr,"loginfunc got (%s) -> seed {%s} %s\n",password,seed,addr);
     return(wasm_result(retval,seed,1));
 }
 
@@ -201,7 +201,7 @@ char *qwallet(char *_args)
             break;
     }
     cmd[i] = 0;
-    printf("args.(%s) -> cmd [%s]\n",args,cmd);
+    fprintf(stderr,"args.(%s) -> cmd [%s]\n",args,cmd);
     for (i=0; i<sizeof(QCMDS)/sizeof(*QCMDS); i++)
     {
         if ( strcmp(cmd,QCMDS[i].command) == 0 )
