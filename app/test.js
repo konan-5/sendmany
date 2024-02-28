@@ -1,32 +1,34 @@
-const io = require('socket.io-client');
-const fs = require('fs').promises;
+const WebSocket = require('ws');
+const crypto = require('crypto');
 
-async function writeFileAsync(filePath, content) {
-    try {
-        await fs.writeFile(filePath, content, 'utf8');
-        console.log('File written successfully');
-    } catch (error) {
-        console.error('Error writing file:', error);
-    }
+function connectAndRequestData(url) {
+    const ws = new WebSocket(url);
+
+    ws.on('open', function open(data) {
+        console.log("Connected to the server");
+        function sendRequest() {
+            const randBytes = crypto.randomBytes(4);
+            console.log(new Uint8Array([8, 0, 0, 27, ...randBytes]))
+            const request = new Uint8Array([8, 0, 0, 27, ...randBytes]);
+            ws.send(request);
+            console.log("Request sent");
+        }
+        sendRequest();
+        setInterval(sendRequest, 3000);
+    });
+    ws.on('error', function(error) {
+        console.log(`WebSocket error: ${error}`);
+    });
+
+    ws.on('message', function(data) {
+        console.log(data)
+        // const response = new Uint8Array(data);
+        // const hexString = [...response].map(b => b.toString(16).padStart(2, '0')).join('');
+        // console.log("Response received in hex:", hexString);
+    });
+
+    ws.on('close', function() {
+        console.log("Disconnected from the server");
+    });
 }
-
-// Connect to your WebSocket server
-const socket = io('http://localhost:3000');
-
-// Listen for the qwallet event
-socket.on('qwallet', (message) => {
-    writeFileAsync('example.txt', 'Hello, world!');
-
-    console.log('Received qwallet event:', message);
-});
-
-// Optionally, you can emit events to the server as needed
-socket.emit('test', 'your-command-here');
-
-socket.on('connect', () => {
-    console.log("connect")
-})
-
-socket.on('disconnect', () => {
-    console.log("disconnected")
-})
+connectAndRequestData("http://146.59.150.157:22841/");
