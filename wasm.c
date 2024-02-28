@@ -1,6 +1,4 @@
     
-// emcc -O3 -sFETCH -lwebsocket.js -sEXPORTED_FUNCTIONS=_qwallet,_main -sEXPORTED_RUNTIME_METHODS=ccall -pthread -sPROXY_TO_PTHREAD -s PTHREAD_POOL_SIZE=8 -s INITIAL_MEMORY=33554432 -s WASM_ASYNC_COMPILATION=0 -s SINGLE_FILE=1 -s -D_LARGEFILE64_SOURCE=1 -fPIC -Wno-implicit-function-declaration -msse2 -msse3 -msse4.1 -msimd128 -msse4.2 -mavx -sASYNCIFY wasm.c
-// node a.out.js
 
 
 #define TESTNET
@@ -246,7 +244,7 @@ int main()
 {
     EM_ASM(
            FS.mkdir('/qwallet');
-           //FS.mount(IDBFS, {}, '/qwallet');
+           // FS.mount(IDBFS, {}, '/qwallet');
            FS.mount(NODEFS, { root: '.' }, '/qwallet');
            FS.syncfs(true, function (err) {
              assert(!err); });
