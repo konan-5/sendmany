@@ -20,7 +20,7 @@
                 if (match) {
                     const result = JSON.parse(match[1]);
                     console.log(result)
-                    $("#result-output").html(`Result: ${result.result} </br> ${result.display}`);
+                    $("#result-output").html(`Result: ${result.result} </br> display: ${result.display} </br> seedpage: ${result.seedpage}`);
                 } else {
                     const messageElement = document.createElement('div');
                     messageElement.textContent = msg;
