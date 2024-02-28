@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
+#include <emscripten.h>
 
 #include "K12AndKeyUtil.h"
 
@@ -230,7 +231,6 @@ char *qwallet(char *_args)
 }
 
 #ifdef EMSCRIPTEN
-#include <emscripten.h>
 
 EM_JS(void, start_timer, (),
     {
