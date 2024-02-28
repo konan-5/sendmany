@@ -235,7 +235,7 @@ char *qwallet(char *_args)
 EM_JS(void, start_timer, (),
     {
         Module.timer = false;
-        setTimeout(function() { Module.timer = true; }, 1000);
+        setTimeout(function() { Module.timer = true; }, 5000);
     }
 );
 EM_JS(bool, check_timer, (), { return Module.timer; });
@@ -256,7 +256,7 @@ int main()
       if ( check_timer() )
       {
           //printf("timer happened!\n");
-            //   qwallet((char *)"login passwordB,bip39");
+           qwallet((char *)"login passwordB,bip39");
         /*char *retstr = qwallet((char *)"login password");
           printf("got retstr.(%s)\n",retstr);
           EM_ASM(
