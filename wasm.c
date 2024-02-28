@@ -92,7 +92,7 @@ int32_t accountcodec(char *rw,char *password,uint8_t subseed[32])
     KangarooTwelve((uint8_t *)password,(int32_t)strlen(password),salt,32);
     sprintf(fname,"%cqwallet%c%s",dir_delim(),dir_delim(),password);
     //sprintf(fname,"%s",password);
-    printf("check (%s) %s\n",fname,rw);
+    //printf("check (%s) %s\n",fname,rw);
     if ( (fp= fopen(fname,rw)) != 0 )
     {
         printf("opened (%s) %s\n",fname,rw);
@@ -137,7 +137,7 @@ char *loginfunc(char **argv,int32_t argc)
         printf("found encrypted file for (%s) -> %s\n",password,addr);
         return(wasm_result(0,addr,0));
     }
-    printf("create encrypted file for %s\n",password);
+    //printf("create encrypted file for %s\n",password);
     if ( argc == 1 )
     {
         for (i=0; i<55; i++)
@@ -174,7 +174,7 @@ char *loginfunc(char **argv,int32_t argc)
     }
     getIdentityFromPublicKey(publickey,addr,false);
     addr[60] = 0;
-    fprintf(stderr,"loginfunc got (%s) -> seed {%s} %s\n",password,seed,addr);
+    printf("loginfunc got (%s) -> seed {%s} %s\n",password,seed,addr);
     return(wasm_result(retval,seed,1));
 }
 
@@ -201,7 +201,7 @@ char *qwallet(char *_args)
             break;
     }
     cmd[i] = 0;
-    fprintf(stderr,"args.(%s) -> cmd [%s]\n",args,cmd);
+    printf("args.(%s) -> cmd [%s]\n",args,cmd);
     for (i=0; i<sizeof(QCMDS)/sizeof(*QCMDS); i++)
     {
         if ( strcmp(cmd,QCMDS[i].command) == 0 )
