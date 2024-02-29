@@ -62,16 +62,16 @@ io.on('connection', (socket) => {
         }
     })
 
-    socket.on('v1status', () => {
-        const run = async () => {
-            const a = await axios.get('http://93.190.139.223:8080/v1/status')
-            let data = JSON.stringify(a.data).replace(" ", "")
-            data = JSON.stringify(a.data).replace("\n", "")
-            console.log(data)
-            socket.broadcast.emit('qwallet', data);
-        }
-        run()
-    })
+    // socket.on('v1status', () => {
+    //     const run = async () => {
+    //         const a = await axios.get('http://93.190.139.223:8080/v1/status')
+    //         let data = JSON.stringify(a.data).replace(" ", "")
+    //         data = JSON.stringify(a.data).replace("\n", "")
+    //         console.log(data)
+    //         socket.broadcast.emit('qwallet', data);
+    //     }
+    //     run()
+    // })
 
     socket.on('broadcast', (message) => {
         console.log(message)

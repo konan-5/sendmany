@@ -20,6 +20,10 @@ socket.on('qwallet', async (command) => {
     console.log(`_^_${result}_^_`)
 });
 
+socket.on('qwalletwithv1', async (command) => {
+    const result = await callQwallet(command)
+});
+
 socket.on('v1request', async (command) => {
     try {
         const result = await callQwallet("v1request")
