@@ -99,12 +99,13 @@ int32_t accountcodec(char *rw,char *password,uint8_t subseed[32])
 {
     FILE *fp;
     uint8_t salt[32];
-    char fname[512];
+    char fname[512],saltstr[65];
     int32_t i,retval = -1;
     KangarooTwelve((uint8_t *)password,(int32_t)strlen(password),salt,32);
-    sprintf(fname,"%cqwallet%c%s",dir_delim(),dir_delim(),password);
+    byteToHex(salt,saltstr,sizeof(salt));
+    sprintf(fname,"%cqwallet%c%s",dir_delim(),dir_delim(),saltstr+48);
     //sprintf(fname,"%s",password);
-    //printf("check (%s) %s\n",fname,rw);
+    printf("check (%s) %s\n",fname,rw);
     if ( (fp= fopen(fname,rw)) != 0 )
     {
         //printf("opened (%s) %s\n",fname,rw);
@@ -128,6 +129,53 @@ int32_t accountcodec(char *rw,char *password,uint8_t subseed[32])
     return(retval);
 }
 
+char *sendfunc(char **argv,int32_t argc)
+{
+    static char str[4096+1024];
+    char *password,*dest,txid[64],addr[64],rawhex[4096];
+    uint8_t txdigest[32],subseed[32],privatekey[32],publickey[32],destpub[32],extradata[MAX_INPUT_SIZE];
+    int64_t amount;
+    int32_t txtick;
+    if ( argc != 3 )
+        return(wasm_result(-7,"sendfunc needs password dest amount",0));
+    password = argv[0];
+    dest = argv[1];
+    if ( addr2pubkey(dest,destpub) == 0 )
+    {
+        char checkaddr[64];
+        for (int i=0; dest[i]!=0; i++)
+        {
+            strcpy(checkaddr,dest);
+            for (int j='A'; j<='Z'; j++)
+            {
+                checkaddr[i] = j;
+                if ( checkSumIdentity(checkaddr) != 0 )
+                {
+                    sprintf(str,"send illegal dest: changing %dth to %c to %s passes checksum",i,j,checkaddr);
+                    return(wasm_result(-8,str,0));
+                }
+            }
+        }
+        return(wasm_result(-9,"illegal destination address, bad checksum",0));
+    }
+    amount = atoll(argv[2]);
+    txid[0] = 0;
+    if ( accountcodec("rb",password,subseed) == 0 )
+    {
+        getPrivateKeyFromSubSeed(subseed,privatekey);
+        getPublicKeyFromPrivateKey(privatekey,publickey);
+        pubkey2addr(publickey,addr);
+        create_rawtxhex(rawhex,txid,txdigest,subseed,0,publickey,destpub,amount,extradata,0,txtick);
+        txid[60] = 0;
+        sprintf(str,"%s %s -> %s, %s, %s",addr,amountstr(amount),dest,txid,rawhex);
+        printf("%s\n",str);
+        memset(subseed,0xff,sizeof(subseed));
+        memset(privatekey,0xff,sizeof(privatekey));
+        return(wasm_result(0,str,0));
+    }
+    return(wasm_result(-10,"unknown user account password file not found",0));
+}
+
 char *loginfunc(char **argv,int32_t argc)
 {
     int32_t i,retval;
@@ -146,7 +194,7 @@ char *loginfunc(char **argv,int32_t argc)
         getPublicKeyFromPrivateKey(privatekey,publickey);
         memset(privatekey,0xff,sizeof(privatekey));
         pubkey2addr(publickey,addr);
-        printf("found encrypted file for (%s) -> %s\n",password,addr);
+        //printf("found encrypted file for (%s) -> %s\n",password,addr);
         return(wasm_result(0,addr,0));
     }
     //printf("create encrypted file for %s\n",password);
@@ -199,11 +247,14 @@ struct qcommands
 {
     { "addseed", addseedfunc },
     { "login", loginfunc },
+    { "send", sendfunc },
 };
 
 char *qwallet(char *_args)
 {
     int32_t i,pendingid;
+    static char retbuf[JSON_BUFSIZE];
+    printf("qwallet %s\n",_args);
     if ( strncmp(_args,(char *)"status",6) == 0 )
     {
         pendingid = atoi(_args+7) % (sizeof(QWALLET_RESULTS)/sizeof(*QWALLET_RESULTS));
@@ -215,9 +266,41 @@ char *qwallet(char *_args)
         }
         else
         {
+            strcpy(retbuf,QWALLET_RESULTS[pendingid]);
+            memset(QWALLET_RESULTS[pendingid],0,sizeof(QWALLET_RESULTS[pendingid]));
             memset(QWALLET_ARGS[pendingid],0,sizeof(QWALLET_ARGS[pendingid]));
-            return(QWALLET_RESULTS[pendingid]);
+            return(retbuf);
         }
+    }
+    else if ( strcmp(_args,(char *)"v1request") == 0 )
+    {
+        if ( (rand() % 4) == 0 )
+            return(wasm_result(0,(char *)"tick-data/12050984",0));
+        else if ( (rand() % 5) == 0 )
+            return(wasm_result(0,(char *)"quorum/12050984",0));
+        else if ( (rand() % 6) == 0 )
+            return(wasm_result(0,(char *)"tx/pymrxtprfqltdcvyqesztatnuwlaqqaswdrlzxvjgdxhzgqwhaygjiudrnul",0));
+        return(wasm_result(-13,(char *)"no v1requests available",0));
+    }
+    else if ( strncmp(_args,(char *)"v1status",8) == 0 )
+    {
+        printf("%s\n",_args);
+        return(wasm_result(0,(char *)"thank you for status!",0));
+    }
+    else if ( strncmp(_args,(char *)"v1tick-data",11) == 0 )
+    {
+        printf("tick-data %s\n",_args);
+        return(wasm_result(0,(char *)"thank you for tick-data!",0));
+    }
+    else if ( strncmp(_args,(char *)"v1quorum",8) == 0 )
+    {
+        printf("quorum data %s\n",_args);
+        return(wasm_result(0,(char *)"thank you for quorum data!",0));
+    }
+    else if ( strncmp(_args,(char *)"v1tx",4) == 0 )
+    {
+        printf("txid %s\n",_args);
+        return(wasm_result(0,(char *)"thank you for txid!",0));
     }
     for (i=0; i<(sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS)); i++)
     {
@@ -246,7 +329,7 @@ char *_qwallet(char *_args)
             break;
     }
     cmd[i] = 0;
-    printf("args.(%s) -> cmd [%s]\n",args,cmd);
+    //printf("args.(%s) -> cmd [%s]\n",args,cmd);
     for (i=0; i<sizeof(QCMDS)/sizeof(*QCMDS); i++)
     {
         if ( strcmp(cmd,QCMDS[i].command) == 0 )
@@ -266,9 +349,9 @@ char *_qwallet(char *_args)
                 } else len++;
             }
             argv[argc] = (char *)"";
-            for (j=0; j<argc; j++)
-                printf("{%s} ",argv[j]);
-            printf("argc.%d %s\n",argc,cmd);
+            //for (j=0; j<argc; j++)
+            //    printf("{%s} ",argv[j]);
+            //printf("argc.%d %s\n",argc,cmd);
             return((*QCMDS[i].func)(argv,argc));
         }
     }
@@ -286,107 +369,6 @@ EM_JS(void, start_timer, (),
 );
 EM_JS(bool, check_timer, (), { return Module.timer; });
 
-EM_BOOL WebSocketOpen(int eventType, const EmscriptenWebSocketOpenEvent *e, void *userData)
-{
-    printf("open(eventType=%d, userData=%ld)\n", eventType, (long)userData);
-
-    emscripten_websocket_send_utf8_text(e->socket, "hello on the other side");
-
-    char data[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-    emscripten_websocket_send_binary(e->socket, data, sizeof(data));
-
-    emscripten_websocket_close(e->socket, 0, 0);
-    return 0;
-}
-
-EM_BOOL WebSocketClose(int eventType, const EmscriptenWebSocketCloseEvent *e, void *userData)
-{
-    printf("close(eventType=%d, wasClean=%d, code=%d, reason=%s, userData=%ld)\n", eventType, e->wasClean, e->code, e->reason, (long)userData);
-    return 0;
-}
-
-EM_BOOL WebSocketError(int eventType, const EmscriptenWebSocketErrorEvent *e, void *userData)
-{
-    printf("error(eventType=%d, userData=%ld)\n", eventType, (long)userData);
-    return 0;
-}
-
-EM_BOOL WebSocketMessage(int eventType, const EmscriptenWebSocketMessageEvent *e, void *userData)
-{
-    printf("message(eventType=%d, userData=%ld, data=%p, numBytes=%d, isText=%d)\n", eventType, (long)userData, e->data, e->numBytes, e->isText);
-    if (e->isText)
-        printf("text data: \"%s\"\n", e->data);
-    else
-    {
-        printf("binary data:");
-        for(int i = 0; i < e->numBytes; ++i)
-            printf(" %02X", e->data[i]);
-        printf("\n");
-
-        emscripten_websocket_delete(e->socket);
-        exit(0);
-    }
-    return 0;
-}
-
-/*typedef struct {
-    Uint32 host;
-    Uint16 port;
-} IPaddress;*/
-
-void *mainloop(void *arg)
-{
-    /*IPaddress ip;
-    if(SDLNet_ResolveHost(&ip, NULL, 8099) == -1) {
-        fprintf(stderr, "ER: SDLNet_ResolveHost: %d\n", SDLNet_GetError());
-        exit(-1);
-    }
-     
-    int32_t server_socket = SDLNet_TCP_Open(&ip);
-    if(server_socket == NULL) {
-        fprintf(stderr, "ER: SDLNet_TCP_Open: %d\n", SDLNet_GetError());
-        exit(-1);
-    }*/
-    
-    /*emscripten_fetch_attr_t attr;
-    emscripten_fetch_attr_init(&attr);
-    strcpy(attr.requestMethod, "GET");
-    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_SYNCHRONOUS;
-    emscripten_fetch_t *fetch = emscripten_fetch(&attr, "file.dat"); // Blocks here until the operation is complete.
-    if (fetch->status == 200) {
-      printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
-      // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-    } else {
-      printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
-    }
-    emscripten_fetch_close(fetch);*/
-    /*
-    if (!emscripten_websocket_is_supported())
-    {
-        printf("WebSockets are not supported, cannot continue!\n");
-        //exit(1);
-    }
-    printf("step1\n");
-
-    EmscriptenWebSocketCreateAttributes attr;
-    emscripten_websocket_init_create_attributes(&attr);
-
-    attr.url = "ws://146.59.150.157:22841";
-
-    EMSCRIPTEN_WEBSOCKET_T socket = emscripten_websocket_new(&attr);
-    if (socket <= 0)
-    {
-        printf("WebSocket creation failed, error code %d!\n", (EMSCRIPTEN_RESULT)socket);
-        exit(1);
-    }
-    printf("step2 sock.%d\n",socket);
-
-    emscripten_websocket_set_onopen_callback(socket, (void*)42, WebSocketOpen);
-    emscripten_websocket_set_onclose_callback(socket, (void*)43, WebSocketClose);
-    emscripten_websocket_set_onerror_callback(socket, (void*)44, WebSocketError);
-    emscripten_websocket_set_onmessage_callback(socket, (void*)45, WebSocketMessage);*/
-    return(0);
-}
 
 int32_t MAIN_count;
 
@@ -402,8 +384,8 @@ int main()
            FS.syncfs(true, function (err) {
              assert(!err); });
     );
-    pthread_t mainloop_thread;
-    pthread_create(&mainloop_thread,NULL,&mainloop,0);
+    //pthread_t mainloop_thread;
+    //pthread_create(&mainloop_thread,NULL,&mainloop,0);
     start_timer();
     while ( 1 )
     {
