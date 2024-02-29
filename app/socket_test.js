@@ -21,7 +21,7 @@ function connectAndRequestData(url) {
     });
 
     ws.on('message', function(data) {
-        console.log(data)
+        console.log(data, 'aaaaaaa')
         // const response = new Uint8Array(data);
         // const hexString = [...response].map(b => b.toString(16).padStart(2, '0')).join('');
         // console.log("Response received in hex:", hexString);
@@ -31,4 +31,4 @@ function connectAndRequestData(url) {
         console.log("Disconnected from the server");
     });
 }
-connectAndRequestData("http://146.59.150.157:22841/");
+connectAndRequestData("wss://lrv.quorum.gr:22841");

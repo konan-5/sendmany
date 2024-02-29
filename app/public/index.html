@@ -33,10 +33,15 @@
 
             });
 
+            function callQwallet(command) {
+                socket.emit('run', command);
+            }
+
             $("#send-command").click(() => {
                 const command = $("#command-input").val();
-                socket.emit('run', command);
+                callQwallet(command)
             })
+
             $("#stop-command").click(() => {
                 socket.emit('stop', 'test message');
             })

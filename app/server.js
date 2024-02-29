@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
+const axios = require('axios')
 const { spawn } = require('child_process');
 
 app.use(express.static('public')); // serve your static files from /public directory
@@ -42,6 +43,18 @@ io.on('connection', (socket) => {
             child.kill()
         } catch (error) {
         }
+    })
+
+    socket.on('v1status', () => {
+        console.log('abcdef')
+        const run = async () => {
+            const a = await axios.get('http://93.190.139.223:8080/v1/status')
+            let data = JSON.stringify(a.data).replace(" ", "")
+            data = JSON.stringify(a.data).replace("\n", "")
+            console.log(data)
+            socket.broadcast.emit('qwallet', data);
+        }
+        run()
     })
 
     // If the user disconnects, kill the child process
