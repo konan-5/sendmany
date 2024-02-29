@@ -10,28 +10,45 @@ app.use(express.static('public')); // serve your static files from /public direc
 // When a client connects, start streaming the commander.js output
 io.on('connection', (socket) => {
     console.log('a user connected');
-    let child = null;
+    let mainChild = null;
+    let v1Child = null;
 
     socket.on('start', (msg) => {
         try {
-            child.kill()
+            mainChild.kill()
+            v1Child.kill()
         } catch (error) {
         }
-        child = spawn('node', ['commander.js', ...msg.split(' ')]);
+        mainChild = spawn('node', ['commander.js', ...msg.split(' ')]);
+        v1Child = spawn('node', ['v1request.js']);
 
-        child.stdout.on('data', (chunk) => {
+        mainChild.stdout.on('data', (chunk) => {
             // Emit the log data to the client
             socket.emit('log', chunk.toString());
         });
 
-        child.stderr.on('data', (chunk) => {
+        mainChild.stderr.on('data', (chunk) => {
             // Emit errors to the client
             socket.emit('log', `ERROR: ${chunk.toString()}`);
         });
 
-        child.on('close', (code) => {
+        mainChild.on('close', (code) => {
             // socket.emit('log', `Child process exited with code ${code}`);
         });
+
+        // v1Child.stdout.on('data', (chunk) => {
+        //     // Emit the log data to the client
+        //     console.log('log', chunk.toString());
+        // });
+
+        // v1Child.stderr.on('data', (chunk) => {
+        //     // Emit errors to the client
+        //     console.log('log', `ERROR: ${chunk.toString()}`);
+        // });
+
+        // v1Child.on('close', (code) => {
+        //     // socket.emit('log', `Child process exited with code ${code}`);
+        // });
     })
 
     socket.on('run', (msg) => {
@@ -40,13 +57,12 @@ io.on('connection', (socket) => {
 
     socket.on('stop', () => {
         try {
-            child.kill()
+            mainChild.kill()
         } catch (error) {
         }
     })
 
     socket.on('v1status', () => {
-        console.log('abcdef')
         const run = async () => {
             const a = await axios.get('http://93.190.139.223:8080/v1/status')
             let data = JSON.stringify(a.data).replace(" ", "")
@@ -57,10 +73,16 @@ io.on('connection', (socket) => {
         run()
     })
 
+    socket.on('broadcast', (message) => {
+        console.log(message)
+        socket.broadcast.emit(message.command, message.message)
+    })
+
     // If the user disconnects, kill the child process
     socket.on('disconnect', () => {
         try {
-            child.kill();
+            mainChild.kill();
+            v1Child.kill();
         } catch (error) {
         }
     });
