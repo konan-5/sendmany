@@ -3,7 +3,6 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Commander.js Log Stream</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QWallet Command Line Interface</title>
     <link rel="stylesheet" href="style.css">
@@ -14,40 +13,41 @@
             const socket = io();
             const logContainer = document.getElementById('console-output');
 
-            socket.on('log', function (msg) {
+            // Function to handle incoming log messages
+            function handleLogMessage(msg) {
                 const regex = /_\^_(.*?)_\^_/;
                 const match = msg.match(regex);
                 if (match) {
                     const result = JSON.parse(match[1]);
-                    console.log(result)
-                    $("#result-output").html(`Result: ${result.result} </br> display: ${result.display} </br> seedpage: ${result.seedpage}`);
+                    console.log(result);
+                    $("#result-output").html(`Result: ${result.result} </br> Display: ${result.display} </br> Seedpage: ${result.seedpage}`);
                 } else {
                     const messageElement = document.createElement('div');
                     messageElement.textContent = msg;
-                    if (logContainer.firstChild) {
-                        logContainer.insertBefore(messageElement, logContainer.firstChild);
-                    } else {
-                        logContainer.appendChild(messageElement);
-                    }
+                    logContainer.prepend(messageElement);
                 }
+            }
 
-            });
+            // Setup socket event listeners
+            socket.on('log', handleLogMessage);
 
+            // Send command to QWallet
             function callQwallet(command) {
                 socket.emit('run', command);
             }
 
+            // Setup button click handlers
             $("#send-command").click(() => {
                 const command = $("#command-input").val();
-                callQwallet(command)
-            })
+                callQwallet(command);
+            });
 
             $("#stop-command").click(() => {
                 socket.emit('stop', 'test message');
-            })
-            // $("#start-command").click(() => {
+            });
+
+            // Automatically start on page load
             socket.emit('start', 'test message');
-            // })
         });
     </script>
 </head>
@@ -55,15 +55,13 @@
 <body>
     <div id="container">
         <div id="input-form">
-            <textarea type="text" id="command-input" placeholder="Enter qwallet command"></textarea>
-            <!-- <button id="start-command">Start</button> -->
+            <textarea id="command-input" placeholder="Enter qwallet command"></textarea>
             <button id="send-command">Send</button>
             <button id="stop-command">Stop</button>
         </div>
         <div id="result-output" class="scrollable-box"></div>
         <div id="console-output" class="scrollable-box"></div>
     </div>
-
 </body>
 
 </html>
