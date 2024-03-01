@@ -1,4 +1,4 @@
-
+    
 
 
 //#define TESTNET
@@ -43,8 +43,15 @@
 #include "json.c"
 #include "qkeys.c"
 #include "qhelpers.c"
+
+
+#define JSON_BUFSIZE (4096)
+
 int32_t LATEST_TICK,NUMADDRESSES;
 char LOGINADDRESSES[64][64];
+#ifdef QUEUE_COMMANDS
+char QWALLET_ARGS[4][1024],QWALLET_RESULTS[(sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS))][JSON_BUFSIZE],QWALLET_lasti;
+#endif
 
 // C code "linked" in by #include
 #include "qtime.c"
@@ -57,7 +64,6 @@ char LOGINADDRESSES[64][64];
 //#include "qsendmany.c"
 //#include "qtests.c"
 
-#define JSON_BUFSIZE 4096
 
 char *wasm_result(int32_t retval,char *displaystr,int32_t seedpage)
 {
@@ -363,8 +369,6 @@ char *addseedfunc(char **argv,int32_t argc)
     return(wasm_result(retval,addr,0));
 }
 
-char QWALLET_ARGS[64][JSON_BUFSIZE],QWALLET_RESULTS[(sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS))][JSON_BUFSIZE],QWALLET_lasti;
-
 struct qcommands
 {
     const char *command;
@@ -376,98 +380,6 @@ struct qcommands
     { "login", loginfunc, "login password,[index [,derivation]]" },
     { "send", sendfunc, "send password,index,dest,amount[,extrahex]" },
 };
-
-char *qwallet(char *_args)
-{
-    int32_t i,pendingid;
-    static char retbuf[JSON_BUFSIZE],toggle;
-    //if ( strcmp(_args,"v1request") != 0 )
-    //    printf("qwallet(%s)\n",_args);
-    if ( strcmp(_args,(char *)"help") == 0 )
-    {
-        retbuf[0] = 0;
-        for (i=0; i<(sizeof(QCMDS)/sizeof(*QCMDS)); i++)
-        {
-            sprintf(retbuf+strlen(retbuf),"%s;",QCMDS[i].helpstr);
-            printf("%s\n",QCMDS[i].helpstr);
-        }
-        return(wasm_result(0,retbuf,0));
-    }
-    else if ( strncmp(_args,(char *)"status",6) == 0 )
-    {
-        /*if ( _args[7] == '{' )
-        {
-            statusupdate(&_args[7]);
-            return(wasm_result(0,"updated",0));
-        }*/
-        pendingid = atoi(_args+7) % (sizeof(QWALLET_RESULTS)/sizeof(*QWALLET_RESULTS));
-        if ( QWALLET_RESULTS[pendingid][0] == 0 )
-        {
-            if ( QWALLET_ARGS[pendingid][0] == 0 )
-                return(wasm_result(pendingid,"no command pending",0));
-            else return(wasm_result(pendingid,"command pending",0));
-        }
-        else
-        {
-            strcpy(retbuf,QWALLET_RESULTS[pendingid]);
-            memset(QWALLET_RESULTS[pendingid],0,sizeof(QWALLET_RESULTS[pendingid]));
-            memset(QWALLET_ARGS[pendingid],0,sizeof(QWALLET_ARGS[pendingid]));
-            return(retbuf);
-        }
-    }
-    else if ( strncmp(_args,(char *)"v1request",9) == 0 )
-    {
-        char reqstr[512];
-        //if ( (rand() % 5) == 0 )
-        {
-            if ( LOGINADDRESSES[toggle] == 0 || (rand() % 2) == 0 )
-                return(wasm_result(0,"status",0));
-            sprintf(reqstr,"address/%s",LOGINADDRESSES[toggle]);
-            toggle = (toggle + 1) % NUMADDRESSES;
-            if ( LOGINADDRESSES[toggle][0] == 0 )
-                toggle = 0;
-            return(wasm_result(0,reqstr,0));
-        }
-        return(wasm_result(-13,(char *)"no v1requests available",0));
-    }
-    else if ( strncmp(_args,(char *)"v1status",8) == 0 )
-    {
-        statusupdate(&_args[9]);
-        return(wasm_result(0,(char *)"thank you for status!",0));
-    }
-    else if ( strncmp(_args,(char *)"v1address",9) == 0 )
-    {
-        printf("%s\n",_args);
-        return(wasm_result(0,(char *)"thank you for address!",0));
-    }
-    else if ( strncmp(_args,(char *)"v1tick-data",11) == 0 )
-    {
-        printf("tick-data %s\n",_args);
-        return(wasm_result(0,(char *)"thank you for tick-data!",0));
-    }
-    else if ( strncmp(_args,(char *)"v1quorum",8) == 0 )
-    {
-        printf("quorum data %s\n",_args);
-        return(wasm_result(0,(char *)"thank you for quorum data!",0));
-    }
-    else if ( strncmp(_args,(char *)"v1tx",4) == 0 )
-    {
-        printf("txid %s\n",_args);
-        return(wasm_result(0,(char *)"thank you for txid!",0));
-    }
-    for (i=0; i<(sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS)); i++)
-    {
-        pendingid = (QWALLET_lasti + i + 1) % (sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS));
-        if ( QWALLET_ARGS[pendingid][0] == 0 )
-        {
-            strcpy(QWALLET_ARGS[pendingid],_args);
-            memset(QWALLET_RESULTS[i],0,sizeof(QWALLET_RESULTS[i]));
-            QWALLET_lasti = pendingid;
-            return(wasm_result(pendingid,"command queued",0));
-        }
-    }
-    return(wasm_result(-6,"command queue full",0));
-}
 
 char *_qwallet(char *_args)
 {
@@ -511,6 +423,101 @@ char *_qwallet(char *_args)
     return(wasm_result(-1,"unknown command",0));
 }
 
+char *qwallet(char *_args)
+{
+    int32_t i,pendingid;
+    static char retbuf[JSON_BUFSIZE],toggle;
+    //if ( strcmp(_args,"v1request") != 0 )
+    //    printf("qwallet(%s)\n",_args);
+    if ( strcmp(_args,(char *)"help") == 0 )
+    {
+        retbuf[0] = 0;
+        for (i=0; i<(sizeof(QCMDS)/sizeof(*QCMDS)); i++)
+        {
+            sprintf(retbuf+strlen(retbuf),"%s;",QCMDS[i].helpstr);
+            printf("%s\n",QCMDS[i].helpstr);
+        }
+        return(wasm_result(0,retbuf,0));
+    }
+    else if ( strncmp(_args,(char *)"status",6) == 0 )
+    {
+#ifdef QUEUE_COMMANDS
+        pendingid = atoi(_args+7) % (sizeof(QWALLET_RESULTS)/sizeof(*QWALLET_RESULTS));
+        if ( QWALLET_RESULTS[pendingid][0] == 0 )
+        {
+            if ( QWALLET_ARGS[pendingid][0] == 0 )
+                return(wasm_result(pendingid,"no command pending",0));
+            else return(wasm_result(pendingid,"command pending",0));
+        }
+        else
+        {
+            strcpy(retbuf,QWALLET_RESULTS[pendingid]);
+            memset(QWALLET_RESULTS[pendingid],0,sizeof(QWALLET_RESULTS[pendingid]));
+            memset(QWALLET_ARGS[pendingid],0,sizeof(QWALLET_ARGS[pendingid]));
+            return(retbuf);
+        }
+#else
+        return(wasm_result(pendingid,"command pending",0));
+#endif
+    }
+    else if ( strncmp(_args,(char *)"v1request",9) == 0 )
+    {
+        char reqstr[512];
+        //if ( (rand() % 5) == 0 )
+        {
+            if ( LOGINADDRESSES[toggle] == 0 || (rand() % 2) == 0 )
+                return(wasm_result(0,"status",0));
+            sprintf(reqstr,"address/%s",LOGINADDRESSES[toggle]);
+            toggle = (toggle + 1) % NUMADDRESSES;
+            if ( LOGINADDRESSES[toggle][0] == 0 )
+                toggle = 0;
+            return(wasm_result(0,reqstr,0));
+        }
+        return(wasm_result(-13,(char *)"no v1requests available",0));
+    }
+    else if ( strncmp(_args,(char *)"v1status",8) == 0 )
+    {
+        statusupdate(&_args[9]);
+        return(wasm_result(0,(char *)"thank you for status!",0));
+    }
+    else if ( strncmp(_args,(char *)"v1address",9) == 0 )
+    {
+        printf("%s\n",_args);
+        return(wasm_result(0,(char *)"thank you for address!",0));
+    }
+    else if ( strncmp(_args,(char *)"v1tick-data",11) == 0 )
+    {
+        printf("tick-data %s\n",_args);
+        return(wasm_result(0,(char *)"thank you for tick-data!",0));
+    }
+    else if ( strncmp(_args,(char *)"v1quorum",8) == 0 )
+    {
+        printf("quorum data %s\n",_args);
+        return(wasm_result(0,(char *)"thank you for quorum data!",0));
+    }
+    else if ( strncmp(_args,(char *)"v1tx",4) == 0 )
+    {
+        printf("txid %s\n",_args);
+        return(wasm_result(0,(char *)"thank you for txid!",0));
+    }
+#ifdef QUEUE_COMMANDS
+    for (i=0; i<(sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS)); i++)
+    {
+        pendingid = (QWALLET_lasti + i + 1) % (sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS));
+        if ( QWALLET_ARGS[pendingid][0] == 0 )
+        {
+            strcpy(QWALLET_ARGS[pendingid],_args);
+            memset(QWALLET_RESULTS[i],0,sizeof(QWALLET_RESULTS[i]));
+            QWALLET_lasti = pendingid;
+            return(wasm_result(pendingid,"command queued",0));
+        }
+    }
+    return(wasm_result(-6,"command queue full",0));
+#else
+    return(_qwallet(_args));
+#endif
+}
+
 #ifdef EMSCRIPTEN
 static EMSCRIPTEN_WEBSOCKET_T bridgeSocket = 0;
 
@@ -545,7 +552,13 @@ int main()
         if ( check_timer() )
         {
             start_timer();
+            MAIN_THREAD_EM_ASM(
+                   FS.syncfs(function (err) {
+                  assert(!err);
+                });
+            );
         }
+#ifdef QUEUE_COMMANDS
         for (i=0; i<(sizeof(QWALLET_ARGS)/sizeof(*QWALLET_ARGS)); i++)
         {
             if ( QWALLET_ARGS[i][0] != 0 && QWALLET_RESULTS[i][0] == 0 )
@@ -554,13 +567,9 @@ int main()
                 char *retstr = _qwallet(QWALLET_ARGS[i]);
                 printf("Q.%d returns.(%s)\n",i,retstr);
                 strcpy(QWALLET_RESULTS[i],retstr);
-                MAIN_THREAD_EM_ASM(
-                       FS.syncfs(function (err) {
-                      assert(!err);
-                    });
-                );
              }
         }
+#endif
         emscripten_sleep(100);
     }
 }
@@ -572,3 +581,5 @@ int main()
     return(0);
 }
 #endif
+
+    
