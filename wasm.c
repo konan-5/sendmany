@@ -23,17 +23,9 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
-#include <netdb.h>
-#include <assert.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-//#include <SDL.h>
+
 #ifdef EMSCRIPTEN
 #include <emscripten.h>
-#include <emscripten/websocket.h>
-#include <emscripten/fetch.h>
-#include <emscripten/threading.h>
-#include <emscripten/posix_socket.h>
 #endif
 
 #include "K12AndKeyUtil.h"
@@ -45,7 +37,7 @@
 #include "qhelpers.c"
 
 
-#define JSON_BUFSIZE (4096)
+#define JSON_BUFSIZE (65536)
 
 int32_t LATEST_TICK,NUMADDRESSES;
 char LOGINADDRESSES[64][64];
@@ -67,8 +59,7 @@ char QWALLET_ARGS[4][1024],QWALLET_RESULTS[(sizeof(QWALLET_ARGS)/sizeof(*QWALLET
 
 char *wasm_result(int32_t retval,char *displaystr,int32_t seedpage)
 {
-    static char json[JSON_BUFSIZE];
-    char tmpstr[JSON_BUFSIZE-128];
+    static char json[JSON_BUFSIZE],tmpstr[JSON_BUFSIZE-128];
     if ( displaystr[0] != '{' )
         sprintf(tmpstr,"\"%s\"",displaystr);
     else strcpy(tmpstr,displaystr);
@@ -212,9 +203,10 @@ char *sendfunc(char **argv,int32_t argc)
             datalen = strlen(argv[4]) / 2;
             hexToByte(argv[4],extradata,datalen);
         }
+        txtick = LATEST_TICK + TICKOFFSET;
         create_rawtxhex(rawhex,txid,txdigest,subseed,0,publickey,destpub,amount,extradata,datalen,txtick);
         txid[60] = 0;
-        sprintf(str,"{\"addr\":\"%s\",\"amount\":%s,\"dest\":\"%s\",\"txid\":\"%s\",\"rawhex\":\"%s\"}",addr,amountstr(amount),dest,txid,rawhex);
+        sprintf(str,"{\"txtick\":%d,\"txid\":\"%s\",\"rawhex\":\"%s\",\"addr\":\"%s\",\"amount\":%s,\"dest\":\"%s\"}",txtick,txid,rawhex,addr,amountstr(amount),dest);
         memset(subseed,0xff,sizeof(subseed));
         memset(privatekey,0xff,sizeof(privatekey));
         char *retstr = wasm_result(0,str,0);
@@ -463,12 +455,13 @@ char *qwallet(char *_args)
     else if ( strncmp(_args,(char *)"v1request",9) == 0 )
     {
         char reqstr[512];
-        //if ( (rand() % 5) == 0 )
+        if ( (rand() % 2) == 0 )
         {
             if ( LOGINADDRESSES[toggle] == 0 || (rand() % 2) == 0 )
                 return(wasm_result(0,"status",0));
             sprintf(reqstr,"address/%s",LOGINADDRESSES[toggle]);
             toggle = (toggle + 1) % NUMADDRESSES;
+            toggle %= (sizeof(LOGINADDRESSES)/sizeof(*LOGINADDRESSES));
             if ( LOGINADDRESSES[toggle][0] == 0 )
                 toggle = 0;
             return(wasm_result(0,reqstr,0));
@@ -519,7 +512,6 @@ char *qwallet(char *_args)
 }
 
 #ifdef EMSCRIPTEN
-static EMSCRIPTEN_WEBSOCKET_T bridgeSocket = 0;
 
 EM_JS(void, start_timer, (),
     {
