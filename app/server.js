@@ -4,8 +4,19 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const { spawn } = require('child_process');
 
+// Set the view engine to ejs
+app.set('view engine', 'ejs');
+
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
+
+app.get('/login', (req, res) => {
+    res.render('login')
+})
+
+app.get('/create', (req, res) => {
+    res.render('create')
+})
 
 // Establish socket connection
 io.on('connection', (socket) => {
