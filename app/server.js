@@ -18,6 +18,10 @@ app.get('/create', (req, res) => {
     res.render('create')
 })
 
+app.get('/', (req, res) => {
+    res.render('index')
+})
+
 // Establish socket connection
 io.on('connection', (socket) => {
     console.log('A user connected');
@@ -40,7 +44,7 @@ io.on('connection', (socket) => {
     socket.on('start', (msg) => {
         killChildProcesses();
 
-        mainChild = spawn('node', ['commander.js', ...msg.split(' ')]);
+        mainChild = spawn('node', ['command.js', ...msg.split(' ')]);
         v1Child = spawn('node', ['v1request.js']);
 
         // Handle output from mainChild
