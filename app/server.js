@@ -44,8 +44,8 @@ io.on('connection', (socket) => {
     socket.on('start', (msg) => {
         killChildProcesses();
 
-        mainChild = spawn('node', ['command.js', ...msg.split(' ')]);
-        v1Child = spawn('node', ['v1request.js']);
+        mainChild = spawn('node', ['./emscripten/command.js', ...msg.split(' ')]);
+        v1Child = spawn('node', ['./emscripten/v1request.js']);
 
         // Handle output from mainChild
         mainChild.stdout.on('data', (data) => {

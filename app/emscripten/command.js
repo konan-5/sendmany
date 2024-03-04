@@ -1,4 +1,4 @@
-const createModule = require('./public/a.out.js');
+const createModule = require('../public/a.out.js');
 const io = require('socket.io-client');
 
 // Remove the first two elements (node, filename)
