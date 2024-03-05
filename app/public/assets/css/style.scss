@@ -85,6 +85,10 @@ body {
                     outline: none;
                 }
             }
+
+            input.check {
+                text-align: left;
+            }
         }
 
         .blur {
@@ -117,7 +121,7 @@ body {
     }
 
 
-    form {
+    #login-form {
         position: relative;
 
         span {
@@ -146,7 +150,7 @@ body {
         text-align: left;
     }
 
-    input[type="button"] {
+    input[type="button"], input[type="submit"] {
         width: 100%;
         padding: 10px;
         margin-top: 20px;

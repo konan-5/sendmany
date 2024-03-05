@@ -12,25 +12,58 @@ app.use(express.static('public'));
 // Use body-parser to parse form data
 app.use(bodyParser.urlencoded({ extended: true }));
 
+let seedInfo = null;
 
 app.get('/login', (req, res) => {
     res.render('login')
-})
-
-app.get('/create', (req, res) => {
-    res.render('create')
 })
 
 app.get('/', (req, res) => {
     res.render('index')
 })
 
-app.post('/dashboard', (req, res) => {
-    res.render('dashboard', req.body)
+app.get('/dashboard', (req, res) => {
+    res.render('dashboard', seedInfo)
+})
+
+app.get('/check', (req, res) => {
+    res.render('check')
+})
+
+app.get('/create', (req, res) => {
+    res.render('create', seedInfo)
 })
 
 app.post('/create', (req, res) => {
-    res.render('create', req.body)
+    seedInfo = {...req.body, result: JSON.parse(req.body.result)}
+    console.log(seedInfo)
+    res.redirect('create')
+})
+
+app.post('/check', (req, res) => {
+    res.redirect('check')
+})
+
+app.post('/confirm', (req, res) => {
+    const compare = seedInfo.result.display.split(' ').every((word, index) => {
+        return req.body[`seed${index}`] === word;
+    })
+    console.log(compare)
+    if(compare){
+        res.redirect('dashboard')
+    }else {
+        res.redirect('check?status=nomatch')
+    }
+})
+
+app.post('/dashboard', (req, res) => {
+    seedInfo = {...req.body, result: JSON.parse(req.body.result)}
+    res.redirect('dashboard')
+})
+
+app.post('/logout', (req, res) => {
+    seedInfo = null
+    res.redirect('login')
 })
 
 // Establish socket connection
