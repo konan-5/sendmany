@@ -19,7 +19,7 @@ const callQwallet = async (command) => {
 // Event listener for 'qwallet'
 socket.on('qwallet', async (command) => {
     const result = await callQwallet(command);
-    console.log(`_^_${result}_^_`); // Log the result
+    socket.emit('broadcast', { command: 'result', message: result })
 });
 
 // Event listener for 'qwalletwithv1'
