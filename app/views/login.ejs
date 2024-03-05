@@ -16,31 +16,29 @@
 
             // Function to handle incoming log messages
             function handleLogMessage(msg) {
-                const regex = /_\^_(.*?)_\^_/;
-                const match = msg.match(regex);
-                if (match) {
-                    const result = JSON.parse(match[1]);
-                    console.log(result);
-                    $("#result-output").html(`Result: ${result.result} </br> Display: ${result.display} </br> Seedpage: ${result.seedpage}`);
-                } else {
-                    const messageElement = document.createElement('div');
-                    messageElement.textContent = msg;
-                    logContainer.prepend(messageElement);
-                }
+                const messageElement = document.createElement('div');
+                messageElement.textContent = msg;
+                logContainer.prepend(messageElement);
+            }
+
+            // Function to handle result of Qwallet call
+            function handleResult(msg) {
+                const result = JSON.parse(msg);
+            }
+
+            // Send command to QWallet
+            function callQwallet(command, flag) {
+                socket.emit('run', { command, flag });
             }
 
             // Setup socket event listeners
             socket.on('log', handleLogMessage);
-
-            // Send command to QWallet
-            function callQwallet(command) {
-                socket.emit('run', command);
-            }
+            socket.on('result', handleResult)
 
             // Setup button click handlers
-            $("#send-command").click(() => {
+            $("#login-btn").click(() => {
                 const command = $("#password").val();
-                callQwallet(command);
+                callQwallet(command, 'login');
             });
         });
     </script>

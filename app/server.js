@@ -44,16 +44,16 @@ io.on('connection', (socket) => {
     socket.on('start', (msg) => {
         killChildProcesses();
 
-        mainChild = spawn('node', ['./emscripten/command.js', ...msg.split(' ')]);
+        mainChild = spawn('node', ['./emscripten/command.js']);
         v1Child = spawn('node', ['./emscripten/v1request.js']);
 
         // Handle output from mainChild
         mainChild.stdout.on('data', (data) => {
-            socket.emit('log', data.toString());
+            socket.emit('log', {value: data.toString(), flag: 'log'});
         });
 
         mainChild.stderr.on('data', (data) => {
-            socket.emit('log', `ERROR: ${data.toString()}`);
+            socket.emit('log', {value: `ERROR: ${data.toString()}`, flag: 'log'});
         });
 
         mainChild.on('close', (code) => {

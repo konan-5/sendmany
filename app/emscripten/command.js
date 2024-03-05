@@ -11,27 +11,27 @@ const Module = createModule();
 const socket = io('http://localhost:3000');
 
 // Function to call the 'qwallet' function from the WebAssembly module
-const callQwallet = async (command) => {
-    const result = await Module.ccall('qwallet', 'string', ['string'], [command]);
-    return result;
+const callQwallet = async (req) => {
+    const result = await Module.ccall('qwallet', 'string', ['string'], [req.command]);
+    return { value: result, flag: req.flag };
 };
 
 // Event listener for 'qwallet'
-socket.on('qwallet', async (command) => {
-    const result = await callQwallet(command);
+socket.on('qwallet', async (req) => {
+    const result = await callQwallet(req);
     socket.emit('broadcast', { command: 'result', message: result })
 });
 
 // Event listener for 'qwalletwithv1'
-socket.on('qwalletwithv1', async (command) => {
-    await callQwallet(command); // Process the command but no need to log or emit
+socket.on('qwalletwithv1', async (req) => {
+    await callQwallet(req); // Process the command but no need to log or emit
 });
 
 // Event listener for 'v1request'
 socket.on('v1request', async () => {
     try {
-        const result = await callQwallet("v1request");
-        const parsedResult = JSON.parse(result);
+        const result = await callQwallet({ command: "v1request", flag: "v1request" });
+        const parsedResult = JSON.parse(result.value);
         if (parsedResult.result === 0) {
             // Emit 'v1response' event with the result if the 'result' property is 0
             socket.emit('broadcast', { command: 'v1response', message: result });
