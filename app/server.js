@@ -13,14 +13,26 @@ app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 let seedInfo = null;
+let confirmSeeds = new Array(24).fill("");
+let confirmStatus = false;
+
+function reset() {
+    seedInfo = null;
+    confirmSeeds = new Array(24).fill("");
+    confirmStatus = false;
+}
 
 app.get('/login', (req, res) => {
-    if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
-        res.render('dashboard', seedInfo)
-    } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
-        res.render('create', seedInfo)
+    if (confirmStatus) {
+        res.redirect('dashboard')
     } else {
-        res.render('login')
+        if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
+            res.redirect('dashboard')
+        } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
+            res.redirect('create')
+        } else {
+            res.render('login')
+        }
     }
 })
 
@@ -29,26 +41,43 @@ app.get('/', (req, res) => {
 })
 
 app.get('/dashboard', (req, res) => {
-    if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
+    if (confirmStatus) {
         res.render('dashboard', seedInfo)
-    } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
-        res.redirect('create')
     } else {
-        res.redirect('login')
+        if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
+        } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
+            res.redirect('create')
+        } else {
+            res.redirect('login')
+        }
     }
 })
 
 app.get('/check', (req, res) => {
-    res.render('check')
+    if (confirmStatus) {
+        res.redirect('dashboard')
+    } else {
+        if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
+            res.redirect('dashboard')
+        } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
+            res.render('check', { confirmSeeds })
+        } else {
+            res.redirect('login')
+        }
+    }
 })
 
 app.get('/create', (req, res) => {
-    if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
-        res.render('dashboard', seedInfo)
-    } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
-        res.render('create', seedInfo)
+    if (confirmStatus) {
+        res.redirect('dashboard')
     } else {
-        res.redirect('login')
+        if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
+            res.redirect('dashboard')
+        } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
+            res.render('create', seedInfo)
+        } else {
+            res.redirect('login')
+        }
     }
 })
 
@@ -63,11 +92,17 @@ app.post('/check', (req, res) => {
 })
 
 app.post('/confirm', (req, res) => {
-    const compare = seedInfo.result.display.split(' ').every((word, index) => {
-        return req.body[`seed${index}`] === word;
+    const display = seedInfo.result.display.split(' ')
+    let compare = true;
+
+    display.map((word, index) => {
+        confirmSeeds[index] = req.body[`seed${index}`];
+        if (req.body[`seed${index}`] != word) compare = false;
     })
-    console.log(compare)
+
+    confirmStatus = compare;
     if (compare) {
+        confirmSeeds = new Array(24).fill("");
         res.redirect('dashboard')
     } else {
         res.redirect('check?status=nomatch')
@@ -80,7 +115,7 @@ app.post('/dashboard', (req, res) => {
 })
 
 app.post('/logout', (req, res) => {
-    seedInfo = null
+    reset()
     res.redirect('login')
 })
 
