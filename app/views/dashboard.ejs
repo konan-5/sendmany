@@ -10,6 +10,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script>
         console.log("<%=password %>")
+        console.log("<%=result.display %>")
     </script>
 </head>
 
@@ -17,116 +18,11 @@
 
     <div class="container">
         <img class="logo" src="./assets/images/logo.png" width="100px" />
-        <h2>Create an account</h2>
+        <h2>Dashboard</h2>
         <div class="description">
-            A new seed has been generated and needs to be securely backed up.
-            We highly recommend to write down on paper for safe keeping
+            This dashboard will provide users with an overview of their accounts, including seed management, address details, and balance information, all while maintaining a user-friendly and secure environment.
         </div>
-        <ul id="seeds">
-            <li>
-                <span>1</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>2</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>3</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>4</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>5</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>6</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>7</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>8</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>9</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>10</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>11</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>12</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>13</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>14</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>15</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>16</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>17</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>18</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>19</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>20</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>21</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>22</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>23</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <li>
-                <span>24</span>
-                <input type="password" value="password" disabled>
-            </li>
-            <div class="blur"></div>
-            <span class="fa fa-eye" id="show"></span>
-        </ul>
-        <div class="backup">
-            <input type="checkbox" name="" id="checkbox">
-            <label for="checkbox">I've Made a Backup</label>
-        </div>
-        <input type="button" value="Next" id="next-btn">
+        <input type="button" value="Create new key" id="next-btn">
     </div>
     <script src="./assets/javascript/script.js"></script>
 </body>
