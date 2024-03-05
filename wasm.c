@@ -125,7 +125,7 @@ void accountfname(char *password,int32_t index,char *fname,uint8_t salt[32])
     char saltstr[65];
     KangarooTwelve((uint8_t *)password,(int32_t)strlen(password),salt,32);
     byteToHex(salt,saltstr,32);
-    sprintf(fname,"%cqwallet%c%s.%d",dir_delim(),dir_delim(),saltstr+48,index);
+    sprintf(fname,"%cqwallet%ckeys%c%s.%d",dir_delim(),dir_delim(),dir_delim(),saltstr+48,index);
 }
 
 int32_t accountcodec(char *rw,char *password,int32_t index,uint8_t subseed[32])
