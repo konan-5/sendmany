@@ -15,7 +15,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 let seedInfo = null;
 
 app.get('/login', (req, res) => {
-    res.render('login')
+    if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
+        res.render('dashboard', seedInfo)
+    } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
+        res.render('create', seedInfo)
+    } else {
+        res.render('login')
+    }
 })
 
 app.get('/', (req, res) => {
@@ -23,7 +29,13 @@ app.get('/', (req, res) => {
 })
 
 app.get('/dashboard', (req, res) => {
-    res.render('dashboard', seedInfo)
+    if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
+        res.render('dashboard', seedInfo)
+    } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
+        res.redirect('create')
+    } else {
+        res.redirect('login')
+    }
 })
 
 app.get('/check', (req, res) => {
@@ -31,11 +43,17 @@ app.get('/check', (req, res) => {
 })
 
 app.get('/create', (req, res) => {
-    res.render('create', seedInfo)
+    if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
+        res.render('dashboard', seedInfo)
+    } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
+        res.render('create', seedInfo)
+    } else {
+        res.redirect('login')
+    }
 })
 
 app.post('/create', (req, res) => {
-    seedInfo = {...req.body, result: JSON.parse(req.body.result)}
+    seedInfo = { ...req.body, result: JSON.parse(req.body.result) }
     console.log(seedInfo)
     res.redirect('create')
 })
@@ -49,15 +67,15 @@ app.post('/confirm', (req, res) => {
         return req.body[`seed${index}`] === word;
     })
     console.log(compare)
-    if(compare){
+    if (compare) {
         res.redirect('dashboard')
-    }else {
+    } else {
         res.redirect('check?status=nomatch')
     }
 })
 
 app.post('/dashboard', (req, res) => {
-    seedInfo = {...req.body, result: JSON.parse(req.body.result)}
+    seedInfo = { ...req.body, result: JSON.parse(req.body.result) }
     res.redirect('dashboard')
 })
 
