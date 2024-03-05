@@ -12,33 +12,59 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const socket = io();
-            const logContainer = document.getElementById('console-output');
-
-            // Function to handle incoming log messages
-            function handleLogMessage(msg) {
-                const messageElement = document.createElement('div');
-                messageElement.textContent = msg;
-                logContainer.prepend(messageElement);
-            }
+            let password = null;
 
             // Function to handle result of Qwallet call
             function handleResult(msg) {
-                const result = JSON.parse(msg);
+                const result = JSON.parse(msg.value);
+                const flag = msg.flag;
+                console.log(result, flag, password)
+                if (flag == 'login' && password) {
+                    if (result.result == 0) {
+                        let actionPath = '';
+                        if (result.seedpage == 0) {
+                            actionPath = '/dashboard';
+                        } else if (result.seedpage == 1) {
+                            actionPath = '/create';
+                        }
+                        // Create a form element
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = actionPath;
+    
+                        // Add password input to form
+                        const passwordInput = document.createElement('input');
+                        passwordInput.type = 'hidden';
+                        passwordInput.name = 'password';
+                        passwordInput.value = password;
+                        form.appendChild(passwordInput);
+    
+                        // Add result input to form
+                        const resultInput = document.createElement('input');
+                        resultInput.type = 'hidden';
+                        resultInput.name = 'result';
+                        resultInput.value = JSON.stringify(result);
+                        form.appendChild(resultInput);
+    
+                        // Add the form to the body and submit it
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                }
             }
 
             // Send command to QWallet
-            function callQwallet(command, flag) {
-                socket.emit('run', { command, flag });
+            function callLoginQwallet(_password) {
+                password = _password;
+                socket.emit('run', { command: `login ${_password}`, flag: 'login' });
             }
 
-            // Setup socket event listeners
-            socket.on('log', handleLogMessage);
             socket.on('result', handleResult)
 
             // Setup button click handlers
             $("#login-btn").click(() => {
-                const command = $("#password").val();
-                callQwallet(command, 'login');
+                const _password = $("#password").val();
+                callLoginQwallet(_password);
             });
         });
     </script>

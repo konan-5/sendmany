@@ -1,4 +1,5 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
@@ -6,9 +7,11 @@ const { spawn } = require('child_process');
 
 // Set the view engine to ejs
 app.set('view engine', 'ejs');
-
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
+// Use body-parser to parse form data
+app.use(bodyParser.urlencoded({ extended: true }));
+
 
 app.get('/login', (req, res) => {
     res.render('login')
@@ -20,6 +23,14 @@ app.get('/create', (req, res) => {
 
 app.get('/', (req, res) => {
     res.render('index')
+})
+
+app.post('/dashboard', (req, res) => {
+    res.render('dashboard', req.body)
+})
+
+app.post('/create', (req, res) => {
+    res.render('create', req.body)
 })
 
 // Establish socket connection
@@ -49,11 +60,11 @@ io.on('connection', (socket) => {
 
         // Handle output from mainChild
         mainChild.stdout.on('data', (data) => {
-            socket.emit('log', {value: data.toString(), flag: 'log'});
+            socket.emit('log', { value: data.toString(), flag: 'log' });
         });
 
         mainChild.stderr.on('data', (data) => {
-            socket.emit('log', {value: `ERROR: ${data.toString()}`, flag: 'log'});
+            socket.emit('log', { value: `ERROR: ${data.toString()}`, flag: 'log' });
         });
 
         mainChild.on('close', (code) => {
