@@ -19,12 +19,19 @@
             Please enter the backup seeds you have saved.
         </div>
         <form method="POST" action="/confirm">
-            <ul id="seeds">
-                <% for(let i=0; i < 24; i ++) { %>
+            <% let ulClass = ''; if (password.startsWith('Q')) { ulClass='start-q' } %>
+            <ul id="seeds" class="<%=ulClass %>">
+                <% if(password.startsWith('Q')) { %>
                     <li>
-                        <span><%= i + 1 %></span>
-                        <input type="text" value="<%= confirmSeeds[i] %>" name="seed<%= i %>" class="check"/>
+                        <input type="text" value="<%= confirmSeeds[0] %>" name="seed0" class="check"/>
                     </li>
+                <% } else { %>
+                    <% for(let i=0; i < 24; i ++) { %>
+                        <li>
+                            <span><%= i + 1 %></span>
+                            <input type="text" value="<%= confirmSeeds[i] %>" name="seed<%= i %>" class="check"/>
+                        </li>
+                    <% } %>
                 <% } %>
             </ul>
             <div class="btn-group">

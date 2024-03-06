@@ -62,7 +62,7 @@ app.get('/check', (req, res) => {
         if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
             res.redirect('dashboard')
         } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
-            res.render('check', { confirmSeeds })
+            res.render('check', { confirmSeeds, password: seedInfo.password })
         } else {
             res.redirect('login')
         }
@@ -97,10 +97,17 @@ app.post('/confirm', (req, res) => {
     const display = seedInfo.result.display.split(' ')
     let compare = true;
 
-    display.map((word, index) => {
-        confirmSeeds[index] = req.body[`seed${index}`];
-        if (req.body[`seed${index}`] != word) compare = false;
-    })
+    if(seedInfo.password.startsWith('Q')) {
+        confirmSeeds[0] = req.body['seed0']
+        if(req.body['seed0'] != display[0]) {
+            compare = false
+        }
+    } else {
+        display.map((word, index) => {
+            confirmSeeds[index] = req.body[`seed${index}`];
+            if (req.body[`seed${index}`] != word) compare = false;
+        })
+    }
 
     confirmStatus = compare;
     if (compare) {

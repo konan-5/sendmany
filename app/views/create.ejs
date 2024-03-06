@@ -19,15 +19,24 @@
             A new seed has been generated and needs to be securely backed up.
             We highly recommend to write down on paper for safe keeping
         </div>
-        <ul id="seeds">
+        <% let ulClass = ''; if (password.startsWith('Q')) { ulClass='start-q' } %>
+        <ul id="seeds" class="<%=ulClass %>">
             <% for(let i=0; i < result.display.split(" ").length; i ++) { %>
                 <li>
-                    <span><%= i + 1 %></span>
+                    <% if(!password.startsWith('Q')) { %>
+                        <span><%= i + 1 %></span>
+                    <% } %>
                     <input type=" password" value="password" disabled>
                 </li>
             <% } %>
-            <div class="blur"></div>
-            <span class="fa fa-eye" id="show"></span>
+            <% if(password.startsWith('Q')) { %>
+                <div class="blur">
+                    <span class="fa fa-eye" id="show"></span>
+                </div>
+            <% } else { %>
+                <div class="blur"></div>
+                <span class="fa fa-eye" id="show"></span>
+            <% } %>
         </ul>
         <div class="backup">
             <input type="checkbox" name="" id="checkbox">

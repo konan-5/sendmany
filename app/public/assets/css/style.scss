@@ -120,6 +120,22 @@ body {
         }
     }
 
+    ul.start-q {
+        font-size: 16px;
+        grid-template-columns: none;
+        input {
+            width: 500px;
+            font-size: 16px;
+            text-align: center;
+            @media (max-width: 600px) {
+                width: inherit;
+            }
+        }
+        #show {
+            font-size: 24px;
+        }
+    }
+
 
     #login-form {
         position: relative;
