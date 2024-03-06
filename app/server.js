@@ -114,7 +114,7 @@ app.post('/confirm', (req, res) => {
         confirmSeeds = new Array(24).fill("");
         res.redirect('dashboard')
     } else {
-        res.redirect('check?status=nomatch')
+        res.redirect('check?status=notmatch')
     }
 })
 

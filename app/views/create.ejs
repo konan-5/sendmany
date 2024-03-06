@@ -95,7 +95,15 @@
                     document.body.appendChild(form);
                     form.submit();
                 }else {
-                    alert('Please backup the seeds.')
+                    Toastify({
+                        text: "Please backup the seeds.",
+                        className: "warning",
+                        style: {
+                            background: "red",
+                            color: "white",
+                        }
+                    }).showToast();
+                    // alert('Please backup the seeds.')
                 }
             })
         });

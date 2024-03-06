@@ -37,6 +37,18 @@
         </form>
     </div>
     <script src="./assets/javascript/script.js"></script>
+    <script>
+        if(document.location.href.includes('notmatch')) {
+            Toastify({
+                text: "Please input correct seeds.",
+                className: "warning",
+                style: {
+                    background: "red",
+                    color: "white",
+                }
+            }).showToast();
+        }
+    </script>
 </body>
 
 </html>
