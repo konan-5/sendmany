@@ -18,7 +18,6 @@
             function handleResult(msg) {
                 const result = JSON.parse(msg.value);
                 const flag = msg.flag;
-                console.log(result, flag, password)
                 if (flag == 'login' && password) {
                     if (result.result == 0) {
                         let actionPath = '';
