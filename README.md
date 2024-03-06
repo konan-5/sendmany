@@ -18,6 +18,9 @@ npm install
 make build
 ```
 
+
+First sendmany SC bjtcittfuccybexsurqvkbwlhbgevqicsmprfvwmfekkpuhxsjuftizbuakk 12796421
+
 ### Run UI
 ```
 npm start
