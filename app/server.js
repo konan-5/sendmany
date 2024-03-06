@@ -14,18 +14,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 let seedInfo = null;
 let confirmSeeds = new Array(24).fill("");
-let confirmStatus = false;
 
 function reset() {
     seedInfo = null;
     confirmSeeds = new Array(24).fill("");
-    confirmStatus = false;
 }
 
 app.get('/login', (req, res) => {
-    if (confirmStatus) {
-        res.redirect('dashboard')
-    } else {
         if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
             res.redirect('dashboard')
         } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
@@ -34,7 +29,6 @@ app.get('/login', (req, res) => {
             reset()
             res.render('login')
         }
-    }
 })
 
 app.get('/', (req, res) => {
@@ -42,9 +36,6 @@ app.get('/', (req, res) => {
 })
 
 app.get('/dashboard', (req, res) => {
-    if (confirmStatus) {
-        res.render('dashboard', seedInfo)
-    } else {
         if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
             res.render('dashboard', seedInfo)
         } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
@@ -52,13 +43,9 @@ app.get('/dashboard', (req, res) => {
         } else {
             res.redirect('login')
         }
-    }
 })
 
 app.get('/check', (req, res) => {
-    if (confirmStatus) {
-        res.redirect('dashboard')
-    } else {
         if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
             res.redirect('dashboard')
         } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
@@ -66,13 +53,9 @@ app.get('/check', (req, res) => {
         } else {
             res.redirect('login')
         }
-    }
 })
 
 app.get('/create', (req, res) => {
-    if (confirmStatus) {
-        res.redirect('dashboard')
-    } else {
         if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
             res.redirect('dashboard')
         } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
@@ -80,7 +63,6 @@ app.get('/create', (req, res) => {
         } else {
             res.redirect('login')
         }
-    }
 })
 
 app.post('/create', (req, res) => {
@@ -109,8 +91,9 @@ app.post('/confirm', (req, res) => {
         })
     }
 
-    confirmStatus = compare;
     if (compare) {
+        seedInfo = {...seedInfo, result: JSON.parse(req.body['result'])}
+        console.log(seedInfo, 'hello')
         confirmSeeds = new Array(24).fill("");
         res.redirect('dashboard')
     } else {

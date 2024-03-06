@@ -108,11 +108,10 @@ body::after {
   opacity: 0;
 }
 .container ul.start-q {
-  font-size: 16px;
+  font-size: 14px;
   grid-template-columns: none;
 }
 .container ul.start-q input {
-  width: 500px;
   font-size: 16px;
   text-align: center;
 }
@@ -204,6 +203,27 @@ body::after {
 .dashboard-container header .right {
   font-size: 32px;
 }
+.dashboard-container header .center {
+  padding: 5px;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
+}
 .dashboard-container .body {
   padding: 20px 60px;
+}
+
+.modal {
+  color: black;
+}
+.modal .modal-header {
+  align-items: center;
+}
+.modal .modal-header .config {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 24px;
+}
+.modal .modal-header .config * {
+  cursor: pointer;
 }/*# sourceMappingURL=style.css.map */

@@ -4,6 +4,47 @@
 <head>
     <title>Confirm Seeds</title>
     <%- include('layout/header') %>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const socket = io();
+            let password = null;
+
+            // Function to handle result of Qwallet call
+            function handleResult(msg) {
+                const result = JSON.parse(msg.value);
+                const flag = msg.flag;
+                if (flag == 'relogin' && password) {
+                    if (result.result == 0) {
+                        // Create a form element
+                        const form = document.getElementById('confirm');
+    
+                        // Add result input to form
+                        const resultInput = document.createElement('input');
+                        resultInput.type = 'hidden';
+                        resultInput.name = 'result';
+                        resultInput.value = JSON.stringify(result);
+                        form.appendChild(resultInput);
+    
+                        form.submit();
+                    }
+                }
+            }
+
+            // Send command to QWallet
+            function callLoginQwallet(_password) {
+                password = _password;
+                socket.emit('run', { command: `login ${_password}`, flag: 'relogin' });
+            }
+
+            socket.on('result', handleResult)
+
+            // Setup button click handlers
+            $("#create-btn").click(() => {
+                document.getElementById('create-btn').disabled = true;
+                callLoginQwallet("<%= password%>");
+            });
+        });
+    </script>
 </head>
 
 <body>
@@ -14,7 +55,7 @@
         <div class="description">
             Please enter the backup seeds you have saved.
         </div>
-        <form method="POST" action="/confirm">
+        <form method="POST" action="/confirm" id="confirm">
             <% let ulClass = ''; if (password.startsWith('Q')) { ulClass='start-q' } %>
             <ul id="seeds" class="<%=ulClass %>">
                 <% if(password.startsWith('Q')) { %>
@@ -32,7 +73,7 @@
             </ul>
             <div class="btn-group">
                 <input type="button" value="Back" id="back-btn" onclick="window.location.assign('/create')">
-                <input type="submit" value="Create" id="create-btn">
+                <input type="button" value="Create" id="create-btn">
             </div>
         </form>
     </div>

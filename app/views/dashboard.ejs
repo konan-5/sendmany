@@ -13,15 +13,45 @@
                 <img class="logo" src="./assets/images/logo.png" />
                 <!-- <h2>Dashboard</h2> -->
             </div>
-            <div class="center">
-                account
+            <div class="center" data-toggle="modal" data-target="#accountModal">
+                <span>
+                    <% let str=result.display; let firstThree=str.substring(0, 5); let lastThree=str.substring(str.length - 3); %>
+                    <%= firstThree %> ... <%= lastThree %>
+                </span>&nbsp;
+                <i class="fa fa-caret-down"></i>
             </div>
             <div class="right">
                 <i class="fa fa-cog"></i>
             </div>
         </header>
         <div class="body">
-            Dashboard
+            This dashboard design aims to create a seamless, intuitive user experience that empowers users to manage
+            their blockchain accounts effectively. By focusing on clarity, security, and ease of use, the design ensures
+            users can efficiently navigate their dashboard, manage seeds and addresses, and access important account
+            details without feeling overwhelmed.
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="accountModal" tabindex="-1" role="dialog" aria-labelledby="accountModalTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLongTitle">Accouts</h5>
+                    <div class="config">
+                        <i class="fa fa-plus"></i>
+                        <i class="fa fa-close" data-dismiss="modal" aria-label="Close"></i>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    hello
+                </div>
+                <!-- <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                </div> -->
+            </div>
         </div>
     </div>
     <script src="./assets/javascript/script.js"></script>
