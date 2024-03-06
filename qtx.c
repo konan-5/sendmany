@@ -1,15 +1,5 @@
 #define FAN 25
 
-typedef struct
-{
-    unsigned char sourcePublicKey[32];
-    unsigned char destinationPublicKey[32];
-    long long amount;
-    unsigned int tick;
-    unsigned short inputType;
-    unsigned short inputSize;
-} Transaction;
-
 struct pubkeypay
 {
     uint8_t publickeys[FAN][32];

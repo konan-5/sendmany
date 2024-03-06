@@ -1,4 +1,4 @@
-    
+
 
 
 //#define TESTNET
@@ -26,6 +26,7 @@
 
 #ifdef EMSCRIPTEN
 #include <emscripten.h>
+#include <emscripten/websocket.h>
 #endif
 
 #include "K12AndKeyUtil.h"
@@ -361,6 +362,36 @@ char *addseedfunc(char **argv,int32_t argc)
     return(wasm_result(retval,addr,0));
 }
 
+char *deletefunc(char **argv,int32_t argc)
+{
+    FILE *fp;
+    uint8_t salt[32];
+    int32_t index;
+    char *password,fname[512],retstr[512];
+    if ( argc != 2 )
+        return(wasm_result(-20,"delete needs password,index",0));
+    password = argv[0];
+    index = atoi(argv[1]);
+    accountfname(password,index,fname,salt);
+    if ( (fp= fopen(fname,"rb")) == 0 )
+        return(wasm_result(-21,"password,index has no file",0));
+    fclose(fp);
+    deletefile(fname);
+    if ( index > 0 )
+        return(wasm_result(0,"password,index file deleted",0));
+    while ( 1 )
+    {
+        index++;
+        accountfname(password,index,fname,salt);
+        if ( (fp= fopen(fname,"rb")) == 0 )
+            return(wasm_result(0,"all consecutive index files for password deleted",0));
+        fclose(fp);
+        deletefile(fname);
+    }
+    sprintf(retstr,"%d index files deleted for password",index);
+    return(wasm_result(0,retstr,0));
+}
+
 struct qcommands
 {
     const char *command;
@@ -370,6 +401,7 @@ struct qcommands
 {
     { "addseed", addseedfunc, "addseed password,seed" },
     { "login", loginfunc, "login password,[index [,derivation]]" },
+    { "delete", deletefunc, "delete password,index" },
     { "send", sendfunc, "send password,index,dest,amount[,extrahex]" },
 };
 
@@ -573,5 +605,3 @@ int main()
     return(0);
 }
 #endif
-
-    

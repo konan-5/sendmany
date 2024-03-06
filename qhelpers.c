@@ -1,4 +1,49 @@
 
+void devurandom(uint8_t *buf,long len)
+{
+    static int32_t fd = -1;
+    int32_t i;
+    if ( fd == -1 )
+    {
+        while ( 1 )
+        {
+            if ( (fd= open("/dev/urandom",O_RDONLY)) != -1 )
+                break;
+            usleep(500000);
+        }
+    }
+    while ( len > 0 )
+    {
+        if ( len < 1048576 )
+            i = (int32_t)len;
+        else i = 1048576;
+        i = (int32_t)read(fd,buf,i);
+        if ( i < 1 )
+        {
+            sleep(1);
+            continue;
+        }
+        buf += i;
+        len -= i;
+    }
+}
+
+struct quheader quheaderset(uint8_t type,int32_t size)
+{
+    struct quheader H;
+    memset(&H,0,sizeof(H));
+    H._size[0] = size;
+    H._size[1] = size >> 8;
+    H._size[2] = size >> 16;
+    if ( (H._type= type) != BROADCAST_TRANSACTION )
+    {
+        devurandom((uint8_t *)&H._dejavu,sizeof(H._dejavu));
+        //if ( (H._dejavu= rand()) == 0 )
+        if ( H._dejavu == 0 )
+            H._dejavu = 1;
+    }
+    return(H);
+}
 
 char dir_delim(void)
 {
@@ -7,6 +52,16 @@ char dir_delim(void)
 #else
     return('/');
 #endif
+}
+
+void makefile(char *fname)
+{
+    FILE *fp;
+    if ( (fp=fopen(fname,"rb")) == 0 )
+    {
+        if ( (fp=fopen(fname,"wb")) != 0 )
+            fclose(fp);
+    } else fclose(fp);
 }
 
 void makedir(const char *dirname)
@@ -27,9 +82,14 @@ void makedir(const char *dirname)
 
 void deletefile(char *fname)
 {
+#ifdef EMSCRIPTEN
+    printf("unlink %s\n",fname);
+    unlink(fname);
+#else
     char cmd[1023];
     sprintf(cmd,"rm %s",fname);
     system(cmd);
+#endif
 }
 
 void cpfile(char *src,char *dest)
@@ -46,34 +106,6 @@ void makepeerslist(const char *fname)
     system(cmd);
 }
 
-void devurandom(uint8_t *buf,long len)
-{
-    static int32_t fd = -1;
-    int32_t i;
-    if ( fd == -1 )
-    {
-        while ( 1 )
-        {
-            if ( (fd= open("/dev/urandom",O_RDONLY)) != -1 )
-                break;
-            sleep(1);
-        }
-    }
-    while ( len > 0 )
-    {
-        if ( len < 1048576 )
-            i = (int32_t)len;
-        else i = 1048576;
-        i = (int32_t)read(fd,buf,i);
-        if ( i < 1 )
-        {
-            sleep(1);
-            continue;
-        }
-        buf += i;
-        len -= i;
-    }
-}
 
 #ifdef __APPLE__
 #define FMT64 "%lld"

@@ -5,7 +5,8 @@ void testsend(char *seed55,char *destaddr,int64_t amount)
     char rawhex[4096],txidstr[64],senderaddr[64],iFAN[6];
     uint8_t txdigest[32],subseed[32];
     memset(iFAN,0,sizeof(iFAN));
-    if ( create_rawtransaction(rawhex,txidstr,txdigest,(uint8_t *)seed55,destaddr,amount,0,"") == 0 )
+    getSubseedFromSeed((uint8_t *)seed55,subseed);
+    if ( create_rawtransaction(rawhex,txidstr,txdigest,subseed,destaddr,amount,0,"") == 0 )
     {
         fanout_subseed(seed55,iFAN,subseed,senderaddr);
         printf("created transaction send from %s to %s %ld, %s rawhex.%s\n",senderaddr,destaddr,(long)amount,txidstr,rawhex);
@@ -86,3 +87,44 @@ void testrandom(char *origseed)
     }
     // get Tickdata and check for txid, if found display balance
 }
+
+
+int32_t validaterawhex(char *rawhex)
+{
+    uint8_t buf[4096];
+    char src[64],dest[64];
+    int32_t validated;
+    Transaction tx;
+    int32_t datalen = (int32_t)strlen(rawhex)/2;
+    hexToByte(rawhex,buf,datalen);
+    memcpy(&tx,buf,sizeof(tx));
+    pubkey2addr(tx.sourcePublicKey,src);
+    pubkey2addr(tx.destinationPublicKey,dest);
+    validated = checktxsig(src,rawhex);
+    printf("%s sends %s to %s, txtick.%d type.%d extra.%d validated.%d\n",src,amountstr(tx.amount),dest,tx.tick,tx.inputType,tx.inputSize,validated);
+    return(0);
+}
+
+struct mesg_buffer {
+    long mesg_type;
+    char mesg_text[100];
+} message;
+  
+void msgtest(void)
+{
+    key_t key;
+    int msgid;
+    // ftok to generate unique key
+    key = ftok("progfile", 65);
+    // msgget creates a message queue
+    // and returns identifier
+    msgid = msgget(key, 0666 | IPC_CREAT);
+    while ( 1 )
+    {
+        msgrcv(msgid, &message, sizeof(message), 1, 0);
+        printf("Data Received is : %s \n",message.mesg_text);
+    }
+    // to destroy the message queue
+    msgctl(msgid, IPC_RMID, NULL);
+}
+

@@ -141,7 +141,7 @@ void *txq_peerloop(void *_ipbytes)
     char ipaddr[16],addr[64];
     uint64_t peermask;
     uint32_t prevutime,iphash;
-    int32_t prevtick,sock,sz,datalen,counter,modval,recvbyte,ptr,bufsize = 2 * 1024 * 1024;
+    int32_t prevtick,sock,sz,datalen,counter,modval,recvbyte,ptr,bufsize = 4 * 1024 * 1024;
     static uint8_t *buf;
     uint8_t reqbuf[MAX_INPUT_SIZE*2],*ipbytes = _ipbytes;
     prevtick = 0;

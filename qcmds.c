@@ -1,5 +1,62 @@
 
 
+/*
+struct qrequest *qrequest_tickinfo(void)
+{
+    return(qrequest_add(0,REQUEST_CURRENT_TICK_INFO,0,0));
+}
+
+struct qrequest *qrequest_computors(void)
+{
+    return(qrequest_add(0,REQUEST_COMPUTORS,0,0));
+}
+
+struct qrequest *qrequest_tickdata(int32_t tick)
+{
+    return(qrequest_add(0,REQUEST_TICK_DATA,(uint8_t *)&tick,sizeof(tick)));
+}
+
+struct qrequest *qrequest_entity(uint8_t pubkey[32])
+{
+    return(qrequest_add(0,REQUEST_ENTITY,pubkey,32));
+}
+
+struct qrequest *qrequest_issued(uint8_t pubkey[32])
+{
+    return(qrequest_add(0,REQUEST_ISSUED_ASSETS,pubkey,32));
+}
+
+struct qrequest *qrequest_possessed(uint8_t pubkey[32])
+{
+    return(qrequest_add(0,REQUEST_POSSESSED_ASSETS,pubkey,32));
+}
+
+struct qrequest *qrequest_owned(uint8_t pubkey[32])
+{
+    return(qrequest_add(0,REQUEST_OWNED_ASSETS,pubkey,32));
+}
+
+struct qrequest *qrequest_quorumtick(int32_t tick)
+{
+    RequestedQuorumTick R;
+    memset(&R,0,sizeof(R));
+    R.tick = tick;
+    return(qrequest_add(REQUEST_QUORUMTICK,0,(uint8_t *)&R,sizeof(R)));
+}
+
+struct qrequest *qrequest_ticktransactions(int32_t tick)
+{
+    RequestedTickTransactions R;
+    memset(&R,0,sizeof(R));
+    R.tick = tick;
+    return(qrequest_add(0,REQUEST_TICK_TRANSACTIONS,(uint8_t *)&R,sizeof(R)));
+}
+
+struct qrequest *qrequest_sendtx(uint8_t *txdata,int32_t txlen)
+{
+    return(qrequest_add(0,BROADCAST_TRANSACTION,txdata,txlen));
+}
+*/
 
 CurrentTickInfo getTickInfoFromNode(const char *nodeIp,int32_t nodePort)
 {

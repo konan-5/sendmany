@@ -43,5 +43,6 @@
 #define MAXSENDMANY_PERTICK 100
 #define MAXFANS (FAN*FAN*FAN + FAN*FAN + FAN + 1)
 
+#define QUBIC_MSGPATH ((char *)"/tmp/qubic")
 char *randpeer(char *ipaddr);
 
