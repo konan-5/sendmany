@@ -13,13 +13,20 @@ app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 let seedInfo = null;
+let confirmSeeds = new Array(24).fill("");
+
+function reset() {
+    seedInfo = null;
+    confirmSeeds = new Array(24).fill("");
+}
 
 app.get('/login', (req, res) => {
     if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
-        res.render('dashboard', seedInfo)
+        res.redirect('dashboard')
     } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
-        res.render('create', seedInfo)
+        res.redirect('create')
     } else {
+        reset()
         res.render('login')
     }
 })
@@ -30,7 +37,7 @@ app.get('/', (req, res) => {
 
 app.get('/dashboard', (req, res) => {
     if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
-        res.render('dashboard', seedInfo)
+        res.render('dashboard', { ...seedInfo, result: { ...seedInfo.result, display: [seedInfo.result.display] } })
     } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
         res.redirect('create')
     } else {
@@ -39,12 +46,18 @@ app.get('/dashboard', (req, res) => {
 })
 
 app.get('/check', (req, res) => {
-    res.render('check')
+    if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
+        res.redirect('dashboard')
+    } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
+        res.render('check', { confirmSeeds, password: seedInfo.password })
+    } else {
+        res.redirect('login')
+    }
 })
 
 app.get('/create', (req, res) => {
     if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
-        res.render('dashboard', seedInfo)
+        res.redirect('dashboard')
     } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
         res.render('create', seedInfo)
     } else {
@@ -62,15 +75,34 @@ app.post('/check', (req, res) => {
     res.redirect('check')
 })
 
+app.post('/addaccount', (req, res) => {
+    seedInfo
+    res.send('')
+})
+
 app.post('/confirm', (req, res) => {
-    const compare = seedInfo.result.display.split(' ').every((word, index) => {
-        return req.body[`seed${index}`] === word;
-    })
-    console.log(compare)
+    const display = seedInfo.result.display.split(' ')
+    let compare = true;
+
+    if (seedInfo.password.startsWith('Q')) {
+        confirmSeeds[0] = req.body['seed0']
+        if (req.body['seed0'] != display[0]) {
+            compare = false
+        }
+    } else {
+        display.map((word, index) => {
+            confirmSeeds[index] = req.body[`seed${index}`];
+            if (req.body[`seed${index}`] != word) compare = false;
+        })
+    }
+
     if (compare) {
+        seedInfo = { ...seedInfo, result: JSON.parse(req.body['result']) }
+        console.log(seedInfo, 'hello')
+        confirmSeeds = new Array(24).fill("");
         res.redirect('dashboard')
     } else {
-        res.redirect('check?status=nomatch')
+        res.redirect('check?status=notmatch')
     }
 })
 
@@ -80,7 +112,7 @@ app.post('/dashboard', (req, res) => {
 })
 
 app.post('/logout', (req, res) => {
-    seedInfo = null
+    reset()
     res.redirect('login')
 })
 

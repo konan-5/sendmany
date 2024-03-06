@@ -2,12 +2,49 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confirm Seeds</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <%- include('layout/header') %>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const socket = io();
+            let password = null;
+
+            // Function to handle result of Qwallet call
+            function handleResult(msg) {
+                const result = JSON.parse(msg.value);
+                const flag = msg.flag;
+                if (flag == 'relogin' && password) {
+                    if (result.result == 0) {
+                        // Create a form element
+                        const form = document.getElementById('confirm');
+    
+                        // Add result input to form
+                        const resultInput = document.createElement('input');
+                        resultInput.type = 'hidden';
+                        resultInput.name = 'result';
+                        resultInput.value = JSON.stringify(result);
+                        form.appendChild(resultInput);
+    
+                        form.submit();
+                    }
+                }
+            }
+
+            // Send command to QWallet
+            function callLoginQwallet(_password) {
+                password = _password;
+                socket.emit('run', { command: `login ${_password}`, flag: 'relogin' });
+            }
+
+            socket.on('result', handleResult)
+
+            // Setup button click handlers
+            $("#create-btn").click(() => {
+                document.getElementById('create-btn').disabled = true;
+                callLoginQwallet("<%= password%>");
+            });
+        });
+    </script>
 </head>
 
 <body>
@@ -18,19 +55,41 @@
         <div class="description">
             Please enter the backup seeds you have saved.
         </div>
-        <form method="POST" action="/confirm">
-            <ul id="seeds">
-                <% for(let i=0; i < 24; i ++) { %>
+        <form method="POST" action="/confirm" id="confirm">
+            <% let ulClass = ''; if (password.startsWith('Q')) { ulClass='start-q' } %>
+            <ul id="seeds" class="<%=ulClass %>">
+                <% if(password.startsWith('Q')) { %>
                     <li>
-                        <span><%= i + 1 %></span>
-                        <input type="text" value="" name="seed<%= i %>" class="check"/>
+                        <input type="text" value="<%= confirmSeeds[0] %>" name="seed0" class="check"/>
                     </li>
+                <% } else { %>
+                    <% for(let i=0; i < 24; i ++) { %>
+                        <li>
+                            <span><%= i + 1 %></span>
+                            <input type="text" value="<%= confirmSeeds[i] %>" name="seed<%= i %>" class="check"/>
+                        </li>
+                    <% } %>
                 <% } %>
             </ul>
-            <input type="submit" value="Create" id="create-btn">
+            <div class="btn-group">
+                <input type="button" value="Back" id="back-btn" onclick="window.location.assign('/create')">
+                <input type="button" value="Create" id="create-btn">
+            </div>
         </form>
     </div>
     <script src="./assets/javascript/script.js"></script>
+    <script>
+        if(document.location.href.includes('notmatch')) {
+            Toastify({
+                text: "Please input correct seeds.",
+                className: "warning",
+                style: {
+                    background: "red",
+                    color: "white",
+                }
+            }).showToast();
+        }
+    </script>
 </body>
 
 </html>

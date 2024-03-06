@@ -2,12 +2,8 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <%- include('layout/header') %>
 </head>
 
 <body>
@@ -19,15 +15,24 @@
             A new seed has been generated and needs to be securely backed up.
             We highly recommend to write down on paper for safe keeping
         </div>
-        <ul id="seeds">
+        <% let ulClass = ''; if (password.startsWith('Q')) { ulClass='start-q' } %>
+        <ul id="seeds" class="<%=ulClass %>">
             <% for(let i=0; i < result.display.split(" ").length; i ++) { %>
                 <li>
-                    <span><%= i + 1 %></span>
+                    <% if(!password.startsWith('Q')) { %>
+                        <span><%= i + 1 %></span>
+                    <% } %>
                     <input type=" password" value="password" disabled>
                 </li>
             <% } %>
-            <div class="blur"></div>
-            <span class="fa fa-eye" id="show"></span>
+            <% if(password.startsWith('Q')) { %>
+                <div class="blur">
+                    <span class="fa fa-eye" id="show"></span>
+                </div>
+            <% } else { %>
+                <div class="blur"></div>
+                <span class="fa fa-eye" id="show"></span>
+            <% } %>
         </ul>
         <div class="backup">
             <input type="checkbox" name="" id="checkbox">
@@ -90,7 +95,15 @@
                     document.body.appendChild(form);
                     form.submit();
                 }else {
-                    alert('Please backup the seeds.')
+                    Toastify({
+                        text: "Please backup the seeds.",
+                        className: "warning",
+                        style: {
+                            background: "red",
+                            color: "white",
+                        }
+                    }).showToast();
+                    // alert('Please backup the seeds.')
                 }
             })
         });
