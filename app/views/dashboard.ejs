@@ -4,6 +4,38 @@
 <head>
     <title>Dashboard</title>
     <%- include('layout/header') %>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log("<%=result%>")
+            console.log("<%=password %>")
+            const socket = io();
+            let password = null;
+            let accounts = <%- JSON.stringify(result.display) %>;
+
+            // Function to handle result of Qwallet call
+            function handleResult(msg) {
+                const result = JSON.parse(msg.value);
+                const flag = msg.flag;
+                console.log(result)
+                if (flag == 'addaccount' && password) {
+                    accounts.push(result.display)
+                }
+            }
+
+            // Send command to QWallet
+            function callLoginQwallet(_password) {
+                password = _password;
+                socket.emit('run', { command: `login ${_password},${accounts.length},derivation`, flag: 'addaccount' });
+            }
+
+            socket.on('result', handleResult)
+
+            // Setup button click handlers
+            $("#add-account").click(() => {
+                callLoginQwallet("<%= password%>");
+            });
+        });
+    </script>
 </head>
 
 <body>
@@ -15,9 +47,10 @@
             </div>
             <div class="center" data-toggle="modal" data-target="#accountModal">
                 <span>
-                    <% let str=result.display; let firstThree=str.substring(0, 5); let lastThree=str.substring(str.length - 3); %>
+                    <% let str=result.display[0]; let firstThree=str.substring(0, 5); 
+                        let lastThree=str.substring(str.length - 3); %>
                     <%= firstThree %> ... <%= lastThree %>
-                </span>&nbsp;
+                </span>
                 <i class="fa fa-caret-down"></i>
             </div>
             <div class="right">
@@ -40,12 +73,26 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLongTitle">Accouts</h5>
                     <div class="config">
-                        <i class="fa fa-plus"></i>
-                        <i class="fa fa-close" data-dismiss="modal" aria-label="Close"></i>
+                        <svg id="add-account" aria-hidden="true" focusable="false" data-prefix="fal"
+                            data-icon="plus"
+                            class="svg-inline--fa fa-plus  icon_iconRecipe_size_l__102a6quc icon_iconInButton__102a6qu0 actionableIcon_actionableIconRecipe__1q4hsc25 actionableIcon_actionableIconRecipe_variant_primary__1q4hsc26"
+                            role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
+                            color="var(--compIconColorDefault__1dinw7t17z)">
+                            <path fill="currentColor"
+                                d="M240 64c0-8.8-7.2-16-16-16s-16 7.2-16 16V240H32c-8.8 0-16 7.2-16 16s7.2 16 16 16H208V448c0 8.8 7.2 16 16 16s16-7.2 16-16V272H416c8.8 0 16-7.2 16-16s-7.2-16-16-16H240V64z">
+                            </path>
+                        </svg>
+                        <svg data-dismiss="modal" aria-label="Close"
+                            class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-vubbuv" focusable="false"
+                            aria-hidden="true" viewBox="0 0 24 24" data-testid="CloseIcon">
+                            <path
+                                d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z">
+                            </path>
+                        </svg>
                     </div>
                 </div>
                 <div class="modal-body">
-                    hello
+                    <%=result.display %>
                 </div>
                 <!-- <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

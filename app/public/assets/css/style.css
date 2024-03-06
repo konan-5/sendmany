@@ -112,7 +112,7 @@ body::after {
   grid-template-columns: none;
 }
 .container ul.start-q input {
-  font-size: 16px;
+  font-size: 15px;
   text-align: center;
 }
 @media (max-width: 600px) {
@@ -213,7 +213,7 @@ body::after {
 }
 
 .modal {
-  color: black;
+  color: #001426;
 }
 .modal .modal-header {
   align-items: center;
@@ -226,4 +226,11 @@ body::after {
 }
 .modal .modal-header .config * {
   cursor: pointer;
+}
+.modal .modal-header .config svg {
+  width: 20px;
+  height: 20px;
+}
+.modal .modal-body {
+  overflow: auto;
 }/*# sourceMappingURL=style.css.map */
