@@ -189,3 +189,45 @@ body {
         gap: 20px;
     }
 }
+
+// Dashboard
+$container-padding: 60px;
+.dashboard-container {
+    width: calc(100% - 20px);
+    max-width: 1368px;
+    background: rgba(3, 35, 61, 0.8);
+    height: calc(100vh - 100px);
+    margin: 0 10px;
+    overflow-y: auto;
+    z-index: 0;
+    border-radius: 10px;
+    box-shadow: 0 15px 25px rgba(0, 0, 0, 0.5);
+    color: white;
+    header {
+        padding: 20px $container-padding;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid white;
+        font-size: 16px;
+        * {
+            cursor: pointer;
+        }
+        .left, .right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .left {
+            .logo {
+                width: 50px;
+            }
+        }
+        .right{
+            font-size: 32px;
+        }
+    }
+    .body {
+        padding: 20px $container-padding;
+    }
+}

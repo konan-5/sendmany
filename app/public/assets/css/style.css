@@ -168,4 +168,42 @@ body::after {
 .container .btn-group {
   display: flex;
   gap: 20px;
+}
+
+.dashboard-container {
+  width: calc(100% - 20px);
+  max-width: 1368px;
+  background: rgba(3, 35, 61, 0.8);
+  height: calc(100vh - 100px);
+  margin: 0 10px;
+  overflow-y: auto;
+  z-index: 0;
+  border-radius: 10px;
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.5);
+  color: white;
+}
+.dashboard-container header {
+  padding: 20px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid white;
+  font-size: 16px;
+}
+.dashboard-container header * {
+  cursor: pointer;
+}
+.dashboard-container header .left, .dashboard-container header .right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dashboard-container header .left .logo {
+  width: 50px;
+}
+.dashboard-container header .right {
+  font-size: 32px;
+}
+.dashboard-container .body {
+  padding: 20px 60px;
 }/*# sourceMappingURL=style.css.map */
