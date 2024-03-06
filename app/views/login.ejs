@@ -62,6 +62,7 @@
 
             // Setup button click handlers
             $("#login-btn").click(() => {
+                document.getElementById('login-btn').disabled = true;
                 const _password = $("#password").val();
                 callLoginQwallet(_password);
             });
