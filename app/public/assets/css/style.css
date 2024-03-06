@@ -147,4 +147,8 @@ body::after {
 }
 .container input[type=button]:hover, .container input[type=submit]:hover {
   background: #4356b4;
+}
+.container .btn-group {
+  display: flex;
+  gap: 20px;
 }/*# sourceMappingURL=style.css.map */

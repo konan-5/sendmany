@@ -31,6 +31,7 @@ app.get('/login', (req, res) => {
         } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
             res.redirect('create')
         } else {
+            reset()
             res.render('login')
         }
     }
@@ -45,6 +46,7 @@ app.get('/dashboard', (req, res) => {
         res.render('dashboard', seedInfo)
     } else {
         if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
+            res.render('dashboard', seedInfo)
         } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
             res.redirect('create')
         } else {
