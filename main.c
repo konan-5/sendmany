@@ -1,6 +1,6 @@
 
 
-#define TESTNET
+//#define TESTNET
 
 #ifdef TESTNET
 #define DEFAULT_NODE_PORT 31841
