@@ -8,7 +8,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             const socket = io();
             let password = null;
-
+            
             // Function to handle result of Qwallet call
             function handleResult(msg) {
                 const result = JSON.parse(msg.value);
@@ -25,48 +25,60 @@
                         const form = document.createElement('form');
                         form.method = 'POST';
                         form.action = actionPath;
-    
+                        
                         // Add password input to form
                         const passwordInput = document.createElement('input');
                         passwordInput.type = 'hidden';
                         passwordInput.name = 'password';
                         passwordInput.value = password;
                         form.appendChild(passwordInput);
-    
+                        
                         // Add result input to form
                         const resultInput = document.createElement('input');
                         resultInput.type = 'hidden';
                         resultInput.name = 'result';
                         resultInput.value = JSON.stringify(result);
                         form.appendChild(resultInput);
-    
+                        
                         // Add the form to the body and submit it
                         document.body.appendChild(form);
                         form.submit();
                     }
                 }
             }
-
+            
             // Send command to QWallet
             function callLoginQwallet(_password) {
                 password = _password;
                 socket.emit('run', { command: `login ${_password}`, flag: 'login' });
             }
-
+            
             socket.on('result', handleResult)
-
-            // Setup button click handlers
-            $("#login-btn").click(() => {
+            
+            function login() {
                 document.getElementById('login-btn').disabled = true;
                 const _password = $("#password").val();
                 callLoginQwallet(_password);
+            }
+            
+            // Setup button click handlers
+            $("#login-btn").click(() => {
+                login()
+            });
+            
+            $('#password').keypress(function(event) {
+                console.log('abcdef')
+                if (event.which == 13) {
+                    event.preventDefault();
+                    login();
+                }
             });
         });
-    </script>
+        </script>
 </head>
 
 <body>
-
+    
     <div class="container">
         <img class="logo" src="./assets/images/logo.png" width="100px" />
         <h2>Login</h2>
