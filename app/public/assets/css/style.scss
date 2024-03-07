@@ -279,11 +279,14 @@ $container-padding: 60px;
                     color: white;
                     padding: 10px;
                     margin-right: 5px;
-                    border: 1px solid #ccc;
+                    border: 1.5px solid #17517a;
                     border-radius: 5px;
                     width: 80px;
                     outline: none;
                     background-color: transparent;
+                    &:focus {
+                        border-color: #2777b1;
+                    }
                 }
 
                 input.address {
@@ -293,14 +296,23 @@ $container-padding: 60px;
                 button {
                     outline: none;
                     padding: 10px 20px;
-                    background-color: #007bff;
+                    background-color: #17517a;
                     border: none;
                     border-radius: 5px;
                     color: white;
                     font-size: 16px;
                     cursor: pointer;
                     transition: background-color 0.3s ease;
+                    &:hover {
+                        background-color: #2777b1;
+                    }
                 }
+            }
+            .activity {
+                margin-top: 20px;
+                max-height: 1000px;
+                overflow: auto;
+                color: #bbb;
             }
         }
     }
