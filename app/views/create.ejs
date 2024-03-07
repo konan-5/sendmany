@@ -21,14 +21,13 @@
                 <li>
                     <% if(!password.startsWith('Q')) { %>
                         <span><%= i + 1 %></span>
+                        <input type="password" value="password" disabled class="no55seed" />
+                    <% } else { %>
+                        <input type="text" value="<%=result.display %>" readonly onclick="copyTextContent(this)"/>
                     <% } %>
-                    <input type=" password" value="password" disabled>
                 </li>
             <% } %>
             <% if(password.startsWith('Q')) { %>
-                <div class="blur">
-                    <span class="fa fa-eye" id="show"></span>
-                </div>
             <% } else { %>
                 <div class="blur"></div>
                 <span class="fa fa-eye" id="show"></span>
@@ -45,7 +44,7 @@
             
             function init () {
                     // Mouse out
-                    const $input = $('ul li input');
+                    const $input = $('.no55seed');
                     $input.val('password');
                     $input.attr('type', 'password');
             }

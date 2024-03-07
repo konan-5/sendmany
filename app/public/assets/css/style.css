@@ -1,3 +1,46 @@
+/* For Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* For Chrome, Safari, Edge, Opera */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For webkit browsers like Chrome and Safari */
+::-webkit-scrollbar {
+  width: 12px; /* Width of the entire scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: #1E1E24; /* Color of the tracking area */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #5C5C6D; /* Color of the scroll thumb */
+  border-radius: 10px;
+  border: 3px solid #1E1E24; /* Creates padding around the scroll thumb */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #787880; /* Color of the scroll thumb on hover */
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin; /* "auto" or "thin" */
+  scrollbar-color: #5C5C6D #1E1E24; /* thumb and track color */
+}
+
+/* Optional: for a smoother scrolling experience */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: Arial, sans-serif;
   background: url("../../assets/images/landing.png") no-repeat center center fixed;
@@ -11,13 +54,17 @@ body {
   position: relative;
 }
 body::after {
-  content: "";
+  content: "Qwallet";
   position: absolute;
   top: 0;
   bottom: 0;
   width: 100%;
   background-color: rgba(2, 18, 37, 0.3215686275);
   z-index: -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 64px;
 }
 
 .container {
@@ -111,12 +158,15 @@ body::after {
   font-size: 14px;
   grid-template-columns: none;
 }
-.container ul.start-q input {
+.container ul.start-q li input {
   font-size: 15px;
   text-align: center;
+  -webkit-user-select: all;
+     -moz-user-select: all;
+          user-select: all;
 }
 @media (max-width: 600px) {
-  .container ul.start-q input {
+  .container ul.start-q li input {
     width: inherit;
   }
 }
@@ -148,7 +198,8 @@ body::after {
   margin-top: 20px;
   text-align: left;
 }
-.container input[type=button], .container input[type=submit] {
+.container input[type=button],
+.container input[type=submit] {
   width: 100%;
   padding: 10px;
   margin-top: 20px;
@@ -161,7 +212,8 @@ body::after {
   border-radius: 5px;
   transition: background-color 0.3s;
 }
-.container input[type=button]:hover, .container input[type=submit]:hover {
+.container input[type=button]:hover,
+.container input[type=submit]:hover {
   background: #4356b4;
 }
 .container .btn-group {
@@ -192,7 +244,8 @@ body::after {
 .dashboard-container header * {
   cursor: pointer;
 }
-.dashboard-container header .left, .dashboard-container header .right {
+.dashboard-container header .left,
+.dashboard-container header .right {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -211,9 +264,54 @@ body::after {
 .dashboard-container .body {
   padding: 20px 60px;
 }
+.dashboard-container .body .more-info {
+  margin-top: 20px;
+}
+.dashboard-container .body .more-info .send input {
+  color: white;
+  padding: 10px;
+  margin-right: 5px;
+  border: 1.5px solid #17517a;
+  border-radius: 5px;
+  width: 80px;
+  outline: none;
+  background-color: transparent;
+}
+.dashboard-container .body .more-info .send input:focus {
+  border-color: #2777b1;
+}
+.dashboard-container .body .more-info .send input.address {
+  width: 500px;
+}
+.dashboard-container .body .more-info .send button {
+  outline: none;
+  padding: 10px 20px;
+  background-color: #17517a;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.dashboard-container .body .more-info .send button:hover {
+  background-color: #2777b1;
+}
+.dashboard-container .body .more-info .activity {
+  margin-top: 40px;
+  max-height: 1000px;
+  overflow: auto;
+}
+.dashboard-container .body .more-info .activity table {
+  color: #bbb;
+}
+.dashboard-container .body .more-info .activity th {
+  border: none;
+}
 
 .modal {
   color: #001426;
+  margin: 0 20px;
 }
 .modal .modal-header {
   align-items: center;
@@ -230,6 +328,9 @@ body::after {
 .modal .modal-header .config svg {
   width: 20px;
   height: 20px;
+}
+.modal .modal-dialog {
+  max-width: 768px;
 }
 .modal .modal-body {
   overflow: auto;

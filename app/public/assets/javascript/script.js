@@ -19,3 +19,43 @@ function logout() {
     document.body.appendChild(form);
     form.submit();
 }
+
+function copyTextContent(element) {
+    // Check if the clipboard API is available
+    if (navigator.clipboard && window.isSecureContext) {
+        // Use the Clipboard API (modern approach)
+        navigator.clipboard.writeText(element.value)
+            .then(() => {
+                console.log("Content copied to clipboard");
+                Toastify({
+                    text: "Seeds copied to clipboard.",
+                    className: "success",
+                    style: {
+                        background: "#5468ff",
+                        color: "white",
+                    }
+                }).showToast();
+            })
+            .catch((error) => {
+                console.error("Copy failed", error);
+            });
+    } else {
+        // Fallback for older browsers
+        element.select(); // Select the text inside the input
+        try {
+            var successful = document.execCommand('copy');
+            var msg = successful ? 'successful' : 'unsuccessful';
+            console.log('Fallback: Copying text command was ' + msg);
+            Toastify({
+                text: "Seeds copied to clipboard.",
+                className: "success",
+                style: {
+                    background: "#5468ff",
+                    color: "white",
+                }
+            }).showToast();
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+        }
+    }
+}

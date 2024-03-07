@@ -1,5 +1,48 @@
 $main-color: #020b1b;
 
+/* For Firefox */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* For Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* For webkit browsers like Chrome and Safari */
+::-webkit-scrollbar {
+    width: 12px; /* Width of the entire scrollbar */
+}
+
+::-webkit-scrollbar-track {
+    background: #1E1E24; /* Color of the tracking area */
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #5C5C6D; /* Color of the scroll thumb */
+    border-radius: 10px;
+    border: 3px solid #1E1E24; /* Creates padding around the scroll thumb */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #787880; /* Color of the scroll thumb on hover */
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin; /* "auto" or "thin" */
+  scrollbar-color: #5C5C6D #1E1E24; /* thumb and track color */
+}
+
+/* Optional: for a smoother scrolling experience */
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: Arial, sans-serif;
     background: url("../../assets/images/landing.png") no-repeat center center fixed;
@@ -16,13 +59,17 @@ body {
     position: relative;
 
     &::after {
-        content: "";
+        content: "Qwallet";
         position: absolute;
         top: 0;
         bottom: 0;
         width: 100%;
-        background-color: #02122552;
+        background-color: rgba(2, 18, 37, 0.3215686275);
         z-index: -1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 64px;
     }
 }
 
@@ -123,14 +170,20 @@ body {
     ul.start-q {
         font-size: 14px;
         grid-template-columns: none;
-        input {
-            // width: 500px;
-            font-size: 15px;
-            text-align: center;
-            @media (max-width: 600px) {
-                width: inherit;
+
+        li {
+            input {
+                // width: 500px;
+                font-size: 15px;
+                text-align: center;
+                user-select: all;
+
+                @media (max-width: 600px) {
+                    width: inherit;
+                }
             }
         }
+
         #show {
             font-size: 24px;
         }
@@ -166,7 +219,8 @@ body {
         text-align: left;
     }
 
-    input[type="button"], input[type="submit"] {
+    input[type="button"],
+    input[type="submit"] {
         width: 100%;
         padding: 10px;
         margin-top: 20px;
@@ -192,6 +246,7 @@ body {
 
 // Dashboard
 $container-padding: 60px;
+
 .dashboard-container {
     width: calc(100% - 20px);
     max-width: 1368px;
@@ -203,6 +258,7 @@ $container-padding: 60px;
     border-radius: 10px;
     box-shadow: 0 15px 25px rgba(0, 0, 0, 0.5);
     color: white;
+
     header {
         padding: 20px $container-padding;
         display: flex;
@@ -210,51 +266,122 @@ $container-padding: 60px;
         align-items: center;
         border-bottom: 1px solid white;
         font-size: 16px;
+
         * {
             cursor: pointer;
         }
-        .left, .right {
+
+        .left,
+        .right {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .left {
             .logo {
                 width: 50px;
             }
         }
-        .right{
+
+        .right {
             font-size: 32px;
         }
+
         .center {
             padding: 5px;
             box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
             border-radius: 5px;
         }
     }
+
     .body {
         padding: 20px $container-padding;
+
+        .summary {
+            // height: 100px;
+        }
+
+        .more-info {
+            margin-top: 20px;
+
+            .send {
+                input {
+                    color: white;
+                    padding: 10px;
+                    margin-right: 5px;
+                    border: 1.5px solid #17517a;
+                    border-radius: 5px;
+                    width: 80px;
+                    outline: none;
+                    background-color: transparent;
+                    &:focus {
+                        border-color: #2777b1;
+                    }
+                }
+
+                input.address {
+                    width: 500px;
+                }
+
+                button {
+                    outline: none;
+                    padding: 10px 20px;
+                    background-color: #17517a;
+                    border: none;
+                    border-radius: 5px;
+                    color: white;
+                    font-size: 16px;
+                    cursor: pointer;
+                    transition: background-color 0.3s ease;
+                    &:hover {
+                        background-color: #2777b1;
+                    }
+                }
+            }
+            .activity {
+                margin-top: 40px;
+                max-height: 1000px;
+                overflow: auto;
+                table {
+                    color: #bbb;
+                }
+                th {
+                    border: none;
+                }
+            }
+        }
     }
 }
 
 .modal {
     color: #001426;
+    margin: 0 20px;
+
     .modal-header {
         align-items: center;
+
         .config {
             display: flex;
             align-items: center;
             gap: 10px;
             font-size: 24px;
+
             * {
                 cursor: pointer;
             }
+
             svg {
                 width: 20px;
                 height: 20px;
             }
         }
     }
+
+    .modal-dialog {
+        max-width: 768px;
+    }
+
     .modal-body {
         overflow: auto;
     }

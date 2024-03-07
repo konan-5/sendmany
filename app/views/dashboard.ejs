@@ -28,12 +28,27 @@
                 socket.emit('run', { command: `login ${_password},${accounts.length},derivation`, flag: 'addaccount' });
             }
 
+            function handleTransfer(msg) {
+                const message = JSON.parse(msg.value);
+                const flag = msg.flag;
+                console.log(message, flag)
+            }
+
             socket.on('result', handleResult)
+
+            socket.on('transfer', handleTransfer)
 
             // Setup button click handlers
             $("#add-account").click(() => {
                 callLoginQwallet("<%= password%>");
             });
+
+            $("#transfer").click(() => {
+                const amount = $("#amount").val()
+                const address = $("#address").val()
+                socket.emit('run', { command: `send password,index,${address},${amount}`, flag: 'transfer' })
+            })
+
         });
     </script>
 </head>
@@ -47,21 +62,68 @@
             </div>
             <div class="center" data-toggle="modal" data-target="#accountModal">
                 <span>
-                    <% let str=result.display[0]; let firstThree=str.substring(0, 5); 
-                        let lastThree=str.substring(str.length - 3); %>
-                    <%= firstThree %> ... <%= lastThree %>
+                    <%=result.display[0] %>
                 </span>
                 <i class="fa fa-caret-down"></i>
             </div>
             <div class="right">
-                <i class="fa fa-cog" onclick="logout()"></i>
+                <i class="fa fa-cog" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <button class="dropdown-item" type="button">Setting</button>
+                    <button class="dropdown-item" type="button" onclick="logout()">Logout</button>
+                </div>
             </div>
+            
         </header>
         <div class="body">
-            This dashboard design aims to create a seamless, intuitive user experience that empowers users to manage
-            their blockchain accounts effectively. By focusing on clarity, security, and ease of use, the design ensures
-            users can efficiently navigate their dashboard, manage seeds and addresses, and access important account
-            details without feeling overwhelmed.
+            <div class="summary">
+                <h3>
+                    Balance: 
+                    <span id="balance">0</span>QU
+                </h3>
+            </div>
+            <div class="more-info">
+                <div class="send">
+                    <input type="text" class="address" id="address" placeholder="Address" />
+                    <input type="number" class="amount" id="amount" placeholder="Amount" />
+                    <button id="transfer">Send</button>
+                </div>
+                <div class="activity">
+                    <h3>
+                        Activity
+                    </h3>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">Date</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Detail</th>
+                                <th scope="col">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td scope="row">9 Mar</td>
+                                <td>Transfer</td>
+                                <td>LSAHJ -> ARDHX</td>
+                                <td>9999999</td>
+                            </tr>
+                            <tr>
+                                <td scope="row">9 Mar</td>
+                                <td>Transfer</td>
+                                <td>LSAHJ -> ARDHX</td>
+                                <td>9999999</td>
+                            </tr>
+                            <tr>
+                                <td scope="row">9 Mar</td>
+                                <td>Transfer</td>
+                                <td>LSAHJ -> ARDHX</td>
+                                <td>9999999</td>
+                            </tr>
+                        </tbody>
+                      </table>
+                </div>
+            </div>
         </div>
     </div>
 

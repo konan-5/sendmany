@@ -1,9 +1,11 @@
 // Import necessary modules
 const io = require('socket.io-client');
 const axios = require('axios');
+const { PORT } = require('../utils/constants');
 
 // Connect to the socket server
-const socket = io('http://localhost:3000');
+const baseURL = `http://localhost:${PORT}`;
+const socket = io(baseURL);
 
 // Regularly emit 'broadcast' events every 1000 milliseconds (1 second)
 setInterval(() => {
