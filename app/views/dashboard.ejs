@@ -28,12 +28,27 @@
                 socket.emit('run', { command: `login ${_password},${accounts.length},derivation`, flag: 'addaccount' });
             }
 
+            function handleTransfer(msg) {
+                const message = JSON.parse(msg.value);
+                const flag = msg.flag;
+                console.log(message, flag)
+            }
+
             socket.on('result', handleResult)
+
+            socket.on('transfer', handleTransfer)
 
             // Setup button click handlers
             $("#add-account").click(() => {
                 callLoginQwallet("<%= password%>");
             });
+
+            $("#transfer").click(() => {
+                const amount = $("#amount").val()
+                const address = $("#address").val()
+                socket.emit('run', { command: `send password,index,${address},${amount}`, flag: 'transfer' })
+            })
+
         });
     </script>
 </head>
@@ -69,9 +84,9 @@
             </div>
             <div class="more-info">
                 <div class="send">
-                    <input type="text" class="address" placeholder="Address" />
-                    <input type="number" class="amount" placeholder="Amount" />
-                    <button>Send</button>
+                    <input type="text" class="address" id="address" placeholder="Address" />
+                    <input type="number" class="amount" id="amount" placeholder="Amount" />
+                    <button id="transfer">Send</button>
                 </div>
                 <div class="activity">
                     <h3>
