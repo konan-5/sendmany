@@ -11,7 +11,6 @@ exports.listUsers = (req, res) => {
 };
 
 exports.createUser = (req, res) => {
-    console.log(req.body.name, req.body.email)
     User.create(req.body.name, req.body.email, (err, user) => {
         if (err) {
             res.status(500).send(err.message);
