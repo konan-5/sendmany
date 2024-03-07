@@ -267,10 +267,15 @@ body::after {
   background-color: #2777b1;
 }
 .dashboard-container .body .more-info .activity {
-  margin-top: 20px;
+  margin-top: 40px;
   max-height: 1000px;
   overflow: auto;
+}
+.dashboard-container .body .more-info .activity table {
   color: #bbb;
+}
+.dashboard-container .body .more-info .activity th {
+  border: none;
 }
 
 .modal {

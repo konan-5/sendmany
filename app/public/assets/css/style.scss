@@ -309,10 +309,15 @@ $container-padding: 60px;
                 }
             }
             .activity {
-                margin-top: 20px;
+                margin-top: 40px;
                 max-height: 1000px;
                 overflow: auto;
-                color: #bbb;
+                table {
+                    color: #bbb;
+                }
+                th {
+                    border: none;
+                }
             }
         }
     }
