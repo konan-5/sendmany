@@ -502,7 +502,7 @@ char *qwallet(char *_args)
     }
     else if ( strncmp(_args,(char *)"v1request",9) == 0 )
     {
-        char reqstr[512];
+        /*char reqstr[512];
         if ( (rand() % 2) == 0 )
         {
             if ( LOGINADDRESSES[toggle] == 0 || (rand() % 2) == 0 )
@@ -513,7 +513,7 @@ char *qwallet(char *_args)
             if ( LOGINADDRESSES[toggle][0] == 0 )
                 toggle = 0;
             return(wasm_result(0,reqstr,0));
-        }
+        }*/
         return(wasm_result(-13,(char *)"no v1requests available",0));
     }
     else if ( strncmp(_args,(char *)"v1status",8) == 0 )
