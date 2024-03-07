@@ -4,13 +4,19 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const { spawn } = require('child_process');
+const userRoutes = require('./routes/userRoutes');
 
 // Set the view engine to ejs
 app.set('view engine', 'ejs');
+
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
+
 // Use body-parser to parse form data
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use('/api', userRoutes);
 
 let seedInfo = null;
 let confirmSeeds = new Array(24).fill("");
