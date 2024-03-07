@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
@@ -22,7 +23,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api', userRoutes);
 app.use('/', mainRoutes);
 
+// Use the PORT from .env, with a fallback to 3000 if not found
+const PORT = process.env.PORT || 3000;
+
 // Start the server
-http.listen(3000, () => {
-    console.log('Server listening on port 3000');
+http.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
 });
