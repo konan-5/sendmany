@@ -1,4 +1,4 @@
-
+    
 
 
 //#define TESTNET
@@ -362,6 +362,21 @@ char *addseedfunc(char **argv,int32_t argc)
     return(wasm_result(retval,addr,0));
 }
 
+char *checkavailfunc(char **argv,int32_t argc)
+{
+    FILE *fp;
+    uint8_t salt[32];
+    char *password,fname[512];
+    if ( argc != 1 )
+        return(wasm_result(-20,"checkavail needs password",0));
+    password = argv[0];
+    accountfname(password,0,fname,salt);
+    if ( (fp= fopen(fname,"rb")) == 0 )
+        return(wasm_result(0,"password is available",0));
+    fclose(fp);
+    return(wasm_result(-33,"password already exists",0));
+}
+
 char *deletefunc(char **argv,int32_t argc)
 {
     FILE *fp;
@@ -402,6 +417,7 @@ struct qcommands
     { "addseed", addseedfunc, "addseed password,seed" },
     { "login", loginfunc, "login password,[index [,derivation]]" },
     { "delete", deletefunc, "delete password,index" },
+    { "checkavail", checkavailfunc, "checkavail password" },
     { "send", sendfunc, "send password,index,dest,amount[,extrahex]" },
 };
 
@@ -605,3 +621,5 @@ int main()
     return(0);
 }
 #endif
+
+    
