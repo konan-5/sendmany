@@ -1,3 +1,15 @@
+/* For Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* For Chrome, Safari, Edge, Opera */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 body {
   font-family: Arial, sans-serif;
   background: url("../../assets/images/landing.png") no-repeat center center fixed;
@@ -155,7 +167,8 @@ body::after {
   margin-top: 20px;
   text-align: left;
 }
-.container input[type=button], .container input[type=submit] {
+.container input[type=button],
+.container input[type=submit] {
   width: 100%;
   padding: 10px;
   margin-top: 20px;
@@ -168,7 +181,8 @@ body::after {
   border-radius: 5px;
   transition: background-color 0.3s;
 }
-.container input[type=button]:hover, .container input[type=submit]:hover {
+.container input[type=button]:hover,
+.container input[type=submit]:hover {
   background: #4356b4;
 }
 .container .btn-group {
@@ -199,7 +213,8 @@ body::after {
 .dashboard-container header * {
   cursor: pointer;
 }
-.dashboard-container header .left, .dashboard-container header .right {
+.dashboard-container header .left,
+.dashboard-container header .right {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -218,9 +233,37 @@ body::after {
 .dashboard-container .body {
   padding: 20px 60px;
 }
+.dashboard-container .body .more-info {
+  margin-top: 20px;
+}
+.dashboard-container .body .more-info .send input {
+  color: white;
+  padding: 10px;
+  margin-right: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 80px;
+  outline: none;
+  background-color: transparent;
+}
+.dashboard-container .body .more-info .send input.address {
+  width: 500px;
+}
+.dashboard-container .body .more-info .send button {
+  outline: none;
+  padding: 10px 20px;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
 
 .modal {
   color: #001426;
+  margin: 0 20px;
 }
 .modal .modal-header {
   align-items: center;

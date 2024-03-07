@@ -52,14 +52,26 @@
                 <i class="fa fa-caret-down"></i>
             </div>
             <div class="right">
-                <i class="fa fa-cog" onclick="logout()"></i>
+                <i class="fa fa-cog" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <button class="dropdown-item" type="button">Setting</button>
+                    <button class="dropdown-item" type="button" onclick="logout()">Logout</button>
+                </div>
             </div>
+            
         </header>
         <div class="body">
-            This dashboard design aims to create a seamless, intuitive user experience that empowers users to manage
-            their blockchain accounts effectively. By focusing on clarity, security, and ease of use, the design ensures
-            users can efficiently navigate their dashboard, manage seeds and addresses, and access important account
-            details without feeling overwhelmed.
+            <div class="summary">
+                Balance: 
+                <span id="balance">30</span>QU
+            </div>
+            <div class="more-info">
+                <div class="send">
+                    <input type="text" class="address" placeholder="Address" />
+                    <input type="number" class="amount" placeholder="Amount" />
+                    <button>Send</button>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -1,5 +1,17 @@
 $main-color: #020b1b;
 
+/* For Firefox */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* For Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 body {
     font-family: Arial, sans-serif;
     background: url("../../assets/images/landing.png") no-repeat center center fixed;
@@ -127,17 +139,20 @@ body {
     ul.start-q {
         font-size: 14px;
         grid-template-columns: none;
+
         li {
             input {
                 // width: 500px;
                 font-size: 15px;
                 text-align: center;
                 user-select: all;
+
                 @media (max-width: 600px) {
                     width: inherit;
                 }
             }
         }
+
         #show {
             font-size: 24px;
         }
@@ -173,7 +188,8 @@ body {
         text-align: left;
     }
 
-    input[type="button"], input[type="submit"] {
+    input[type="button"],
+    input[type="submit"] {
         width: 100%;
         padding: 10px;
         margin-top: 20px;
@@ -199,6 +215,7 @@ body {
 
 // Dashboard
 $container-padding: 60px;
+
 .dashboard-container {
     width: calc(100% - 20px);
     max-width: 1368px;
@@ -210,6 +227,7 @@ $container-padding: 60px;
     border-radius: 10px;
     box-shadow: 0 15px 25px rgba(0, 0, 0, 0.5);
     color: white;
+
     header {
         padding: 20px $container-padding;
         display: flex;
@@ -217,54 +235,105 @@ $container-padding: 60px;
         align-items: center;
         border-bottom: 1px solid white;
         font-size: 16px;
+
         * {
             cursor: pointer;
         }
-        .left, .right {
+
+        .left,
+        .right {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .left {
             .logo {
                 width: 50px;
             }
         }
-        .right{
+
+        .right {
             font-size: 32px;
         }
+
         .center {
             padding: 5px;
             box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
             border-radius: 5px;
         }
     }
+
     .body {
         padding: 20px $container-padding;
+
+        .summary {
+            // height: 100px;
+        }
+
+        .more-info {
+            margin-top: 20px;
+
+            .send {
+                input {
+                    color: white;
+                    padding: 10px;
+                    margin-right: 5px;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
+                    width: 80px;
+                    outline: none;
+                    background-color: transparent;
+                }
+
+                input.address {
+                    width: 500px;
+                }
+
+                button {
+                    outline: none;
+                    padding: 10px 20px;
+                    background-color: #007bff;
+                    border: none;
+                    border-radius: 5px;
+                    color: white;
+                    font-size: 16px;
+                    cursor: pointer;
+                    transition: background-color 0.3s ease;
+                }
+            }
+        }
     }
 }
 
 .modal {
     color: #001426;
+    margin: 0 20px;
+
     .modal-header {
         align-items: center;
+
         .config {
             display: flex;
             align-items: center;
             gap: 10px;
             font-size: 24px;
+
             * {
                 cursor: pointer;
             }
+
             svg {
                 width: 20px;
                 height: 20px;
             }
         }
     }
+
     .modal-dialog {
         max-width: 768px;
     }
+
     .modal-body {
         overflow: auto;
     }

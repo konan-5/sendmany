@@ -21,9 +21,9 @@
                 <li>
                     <% if(!password.startsWith('Q')) { %>
                         <span><%= i + 1 %></span>
-                        <input type="password" value="password" disabled class="no55seed"/>
+                        <input type="password" value="password" disabled class="no55seed" />
                     <% } else { %>
-                        <input type="text" value="<%=result.display %>" disabled/>
+                        <input type="text" value="<%=result.display %>" readonly onclick="copyTextContent(this)"/>
                     <% } %>
                 </li>
             <% } %>
