@@ -1,6 +1,7 @@
 const createModule = require('../public/a.out.js');
 const io = require('socket.io-client');
 const axios = require('axios');
+const { PORT } = require('../utils/constants');
 
 // Remove the first two elements (node, filename)
 const args = process.argv.splice(2);
@@ -8,7 +9,8 @@ const args = process.argv.splice(2);
 // Initialize the WebAssembly module
 const Module = createModule();
 
-const baseURL = 'http://localhost:3000';
+
+const baseURL = `http://localhost:${PORT}`;
 
 const api = axios.create({
     baseURL

@@ -7,6 +7,8 @@ const io = require('socket.io')(http);
 const userRoutes = require('./routes/userRoutes');
 const mainRoutes = require('./routes/mainRoutes');
 
+const { PORT } = require('./utils/constants');
+
 const socketController = require('./controllers/socketController')(io);
 
 // Set the view engine to ejs
@@ -23,8 +25,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api', userRoutes);
 app.use('/', mainRoutes);
 
-// Use the PORT from .env, with a fallback to 3000 if not found
-const PORT = process.env.PORT || 3000;
 
 // Start the server
 http.listen(PORT, () => {
