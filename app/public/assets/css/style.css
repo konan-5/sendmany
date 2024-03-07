@@ -111,12 +111,15 @@ body::after {
   font-size: 14px;
   grid-template-columns: none;
 }
-.container ul.start-q input {
+.container ul.start-q li input {
   font-size: 15px;
   text-align: center;
+  -webkit-user-select: all;
+     -moz-user-select: all;
+          user-select: all;
 }
 @media (max-width: 600px) {
-  .container ul.start-q input {
+  .container ul.start-q li input {
     width: inherit;
   }
 }
