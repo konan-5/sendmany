@@ -1,4 +1,4 @@
-
+    
 /*#define MAX_INPUT_SIZE 1024
 #ifdef TESTNET
 #define DEFAULT_NODE_PORT 31841
@@ -50,64 +50,76 @@ const char *Peers[] =
 };
 
 #define MAXPEERS 128
+#define MAXADDRESSES 1000001
 
 char Newpeers[64][16];
-int32_t Numnewpeers,Numpeers;//,Numesubs,NumTsubs;
+int32_t Numnewpeers,Numpeers,Numsubs,Numaddrs;
 pthread_mutex_t addpeer_mutex;
 CurrentTickInfo Peertickinfo[MAXPEERS];
-struct qrequest *REQS[MAXPEERS];
 
-struct esub
+struct subscriber
 {
-    uint8_t pubkey[32];
-    uint32_t respid,onetimeflag;
-} ESUBS[1024];
+    uint8_t rawtx[MAX_INPUT_SIZE*2];
+    uint64_t peersflag,key;
+    int32_t respid,numpubkeys,errs,flag;
+    uint8_t *pubkeys;
+} *SUBS;
 
-uint32_t TSUBS[1024][2];
-
-void Tsubscriberadd(uint32_t respid)
+struct addrhash
 {
+    struct Entity entity;
+    uint32_t createtime;
+    int32_t tick;
+} *Addresses;
+
+struct addrhash *Addresshash(uint8_t pubkey[32],uint32_t utime)
+{
+    uint64_t hashi;
     int32_t i;
-    if ( respid == 0 )
-        return;
-    for (i=0; i<1024; i++)
+    struct addrhash *ap;
+    hashi = *(uint64_t *)&pubkey[8] % MAXADDRESSES;
+    for (i=0; i<MAXADDRESSES; i++)
     {
-        if ( TSUBS[i][0] == respid )
-            return;
-        if ( TSUBS[i][0] == 0 )
+        ap = &Addresses[(hashi + i) % MAXADDRESSES];
+        if ( memcmp(ap->entity.publicKey,pubkey,32) == 0 )
+            return(ap);
+        if ( ap->createtime == 0 )
         {
-            TSUBS[i][0] = respid;
-            break;
+            if ( utime == 0 )
+                return(0);
+            memcpy(ap->entity.publicKey,pubkey,32);
+            ap->createtime = utime;
+            return(ap);
         }
     }
-}
-
-int32_t pubkeyrespid(uint8_t pubkey[32])
-{
-    int32_t i;
-    for (i=0; i<1024; i++)
-    {
-        if ( memcmp(ESUBS[i].pubkey,pubkey,sizeof(ESUBS[i].pubkey)) == 0 )
-            return(ESUBS[i].respid);
-    }
+    printf("hash table full\n");
     return(0);
 }
 
-void entitysubscription(int32_t onetimeflag,uint32_t respid,uint8_t pubkey[32])
+struct subscriber *Subscriberget(uint64_t key)
 {
     int32_t i;
-    for (i=0; i<1024; i++)
-    {
-        if ( memcmp(ESUBS[i].pubkey,pubkey,sizeof(ESUBS[i].pubkey)) == 0  && ESUBS[i].respid == respid && ESUBS[i].onetimeflag == onetimeflag )
-            return;
-        if ( ESUBS[i].respid == 0 )
-        {
-            memcpy(ESUBS[i].pubkey,pubkey,sizeof(ESUBS[i].pubkey));
-            ESUBS[i].respid = respid;
-            ESUBS[i].onetimeflag = onetimeflag;
-            break;
-        }
-    }
+    struct subscriber *sp;
+    for (i=0; i<Numsubs; i++)
+        if ( SUBS[i].key == key )
+            return(&SUBS[i]);
+    SUBS = realloc(SUBS,sizeof(*SUBS) * (Numsubs+1));
+    sp = &SUBS[Numsubs++];
+    memset(sp,0,sizeof(*sp));
+    sp->key = key;
+    return(sp);
+}
+
+int32_t SubscriberAddr(struct subscriber *sp,struct addrhash *ap)
+{
+    int32_t i;
+    for (i=0; i<sp->numpubkeys; i++)
+        if ( memcmp(sp->pubkeys + i*32,ap->entity.publicKey,32) == 0 )
+            return(0);
+    sp->pubkeys = realloc(sp->pubkeys,32 * (sp->numpubkeys+1));
+    memcpy(sp->pubkeys + sp->numpubkeys*32,ap->entity.publicKey,32);
+    sp->numpubkeys++;
+    return(1);
 }
 
 void addnewpeer(char *ipaddr)
@@ -135,54 +147,6 @@ void addnewpeer(char *ipaddr)
     pthread_mutex_unlock(&addpeer_mutex);
 }
 
-struct qrequest *qrequest_poll(int32_t peerid)
-{
-    struct qrequest *rp;
-    pthread_mutex_lock(&qrequest_mutex);
-    if ( (rp= REQS[peerid]) != 0 )
-    {
-        DL_DELETE(REQS[peerid],rp);
-    }
-    pthread_mutex_unlock(&qrequest_mutex);
-    return(rp);
-}
-
-struct qrequest *qrequest_add(int32_t peerid,uint8_t type,uint8_t *payload,int32_t payloadlen)
-{
-    struct qrequest *rp,*tmp;
-    int32_t count,size = sizeof(*rp) + payloadlen;
-    rp = (struct qrequest *)calloc(1,size);
-    rp->H = quheaderset(type,size);
-    if ( payload != 0 && payloadlen > 0 )
-        memcpy(rp->payload,payload,payloadlen);
-    rp->size = payloadlen + sizeof(rp->H);
-    pthread_mutex_lock(&qrequest_mutex);
-    DL_APPEND(REQS[peerid],rp);
-    pthread_mutex_unlock(&qrequest_mutex);
-    DL_COUNT(REQS[peerid],tmp,count);
-    //for (int j=0; j<rp->size; j++)
-    //    printf("%02x",((uint8_t *)&rp->H)[j]);
-    //printf(" peerid.%d count.%d after add\n",peerid,count);
-    return(rp);
-}
-  
-void addpeerqueue(int32_t type,uint8_t *payload,int32_t payloadlen)
-{
-    static int32_t lastpeerid,lastpeerid2;
-    int32_t i,peerid;
-    for (i=0; i<64; i++)
-    {
-        peerid = (rand() % (Numpeers+1));
-        if ( peerid == lastpeerid || peerid == lastpeerid2 || Peertickinfo[peerid].tick < LATEST_TICK - 10 )
-            continue;
-        lastpeerid2 = lastpeerid;
-        lastpeerid = peerid;
-        qrequest_add(peerid,type,payload,payloadlen);
-        return;
-    }
-    printf("could not find peerid\n");
-}
-
 void process_publicpeers(int32_t peerid,char *ipaddr,ExchangePublicPeers *peers)
 {
     int32_t i,j;
@@ -206,28 +170,30 @@ void process_tickinfo(int32_t peerid,char *ipaddr,CurrentTickInfo *I)
     }
 }
 
-void entityjson(char *str,char *addr,struct Entity E,int32_t tick)
-{
-    sprintf(str,"{\"address\":\"%s\",\"balance\":\"%s\",\"tick\":%d,\"numin\":%d,\"totalincoming\":\"%s\",\"latestin\":%d,\"numout\":%d,\"totaloutgoing\":\"%s\",\"latestout\":%d}",addr,amountstr(E.incomingAmount - E.outgoingAmount),tick,E.numberOfIncomingTransfers,amountstr2(E.incomingAmount),E.latestIncomingTransferTick,E.numberOfOutgoingTransfers,amountstr3(E.outgoingAmount),E.latestOutgoingTransferTick);
-}
-
 void process_entity(int32_t peerid,char *ipaddr,RespondedEntity *E)
 {
-    char addr[64];
-    int32_t respid;
-    struct qbuffer M;
-    pubkey2addr(E->entity.publicKey,addr);
-    for (int j=0; j<32; j++)
-        printf("%02x",E->entity.publicKey[j]);
-    respid = pubkeyrespid(E->entity.publicKey);
-    printf(" %s got entity %s tick.%d respid.%d\n",ipaddr,addr,E->tick,respid);
-    if ( respid != 0 )
+    struct addrhash *ap;
+    if ( (ap= Addresshash(E->entity.publicKey,0)) != 0 )
+    {
+        char addr[64];
+        pubkey2addr(E->entity.publicKey,addr);
+        for (int j=0; j<32; j++)
+            printf("%02x",E->entity.publicKey[j]);
+        printf(" %s got entity %s tick.%d vs %d\n",ipaddr,addr,E->tick,ap->tick);
+        if ( E->tick > ap->tick )
+        {
+            memcpy(&ap->entity,&E->entity,sizeof(ap->entity));
+            ap->tick = E->tick;
+        }
+        // do merkle validation
+    } else printf("unexpected entity data without address?\n");
+    /*if ( respid != 0 )
     {
         M.mesg_type = 1;
-        entityjson((char *)M.mesg_text,addr,E->entity,E->tick);
+        entityjson((char *)M.mesg_text,ipaddr,addr,E->entity,E->tick);
         msgsnd(respid,&M,strlen((char *)M.mesg_text)+1+sizeof(uint64_t),IPC_NOWAIT);
         printf("%s\n",(char *)M.mesg_text);
-    }
+    }*/
 }
 
 void process_computors(int32_t peerid,char *ipaddr,Computors *computors)
@@ -310,9 +276,10 @@ int32_t process_response(int32_t peerid,char *ipaddr,struct quheader *H,void *da
 void *peerthread(void *_ipaddr)
 {
     char *ipaddr = _ipaddr;
-    struct qrequest *rp;
-    int32_t peerid=0,sock=-1,ptr,sz,recvbyte,iter = 0;
+    struct EntityRequest E;
+    int32_t peerid=0,sock=-1,i,hashi,lasthashi,ptr,sz,recvbyte,prevutime = 0,prevtick = 0,iter = 0;
     struct quheader H;
+    struct addrhash *ap;
     uint8_t buf[4096];
     while ( iter++ < 10 )
     {
@@ -324,6 +291,7 @@ void *peerthread(void *_ipaddr)
         return(0);
     Numpeers++;
     peerid = Numpeers;
+    lasthashi = peerid * (MAXADDRESSES / 64);
     printf("connected.%d peerthread %s\n",Numpeers,ipaddr);
     H = quheaderset(REQUEST_CURRENT_TICK_INFO,sizeof(H));
     sock = socksend(ipaddr,sock,(uint8_t *)&H,sizeof(H));
@@ -355,17 +323,37 @@ void *peerthread(void *_ipaddr)
                 ptr += sz;
             }
         }
-        while ( (rp= qrequest_poll(peerid)) == 0 )
+        if ( LATEST_UTIME > prevutime )
         {
-            if ( (rp= qrequest_poll(0)) != 0 )
-                break;
-            usleep(100000);
+            prevutime = LATEST_UTIME;
+            H = quheaderset(REQUEST_CURRENT_TICK_INFO,sizeof(H));
+            sock = socksend(ipaddr,sock,(uint8_t *)&H,sizeof(H));
         }
-        //netpackets++;
-        //printf("%s send %d req\n",ipaddr,rp->size);
-        sock = socksend(ipaddr,sock,(uint8_t *)&rp->H,rp->size);
-        //printf("freeing %p\n",rp);
-        free(rp);
+        if ( LATEST_TICK > prevtick )
+        {
+            prevtick = LATEST_TICK;
+            if ( Peertickinfo[peerid].tick < LATEST_TICK - 1000 )
+            {
+                //printf("peerid.%d latest.%d lag.%d, skip entity request\n",peerid,Peertickinfo[peerid].tick,LATEST_TICK-Peertickinfo[peerid].tick);
+            }
+            else
+            {
+                //printf("peerid.%d lasthashi.%d\n",peerid,lasthashi);
+                for (hashi=i=0; i<8192; i++)
+                {
+                    hashi = (lasthashi + i) % MAXADDRESSES;
+                    ap = &Addresses[hashi];
+                    if ( ap->createtime == 0 || ap->tick >= Peertickinfo[peerid].tick )
+                        continue;
+                    printf("peerid.%d >>>>>>>>>>>>> found address at %d\n",peerid,hashi);
+                    memset(&E,0,sizeof(E));
+                    E.H = quheaderset(REQUEST_ENTITY,sizeof(E));
+                    memcpy(E.pubkey,ap->entity.publicKey,sizeof(E.pubkey));
+                    sock = socksend(ipaddr,sock,(uint8_t *)&E,sizeof(E));
+                }
+                lasthashi = hashi;
+            }
+        }
     }
     return(0);
 }
@@ -391,30 +379,38 @@ void *findpeers(void *args)
 
 #define MSG_COPY        040000
 
+
+void entityjson(char *str,char *addr,struct Entity E,int32_t tick)
+{
+    sprintf(str,"{\"address\":\"%s\",\"balance\":\"%s\",\"tick\":%d,\"numin\":%d,\"totalincoming\":\"%s\",\"latestin\":%d,\"numout\":%d,\"totaloutgoing\":\"%s\",\"latestout\":%d}",addr,amountstr(E.incomingAmount - E.outgoingAmount),tick,E.numberOfIncomingTransfers,amountstr2(E.incomingAmount),E.latestIncomingTransferTick,E.numberOfOutgoingTransfers,amountstr3(E.outgoingAmount),E.latestOutgoingTransferTick);
+}
+
 //int main(int argc, const char * argv[])
 void qserver(void)
 {
     pthread_t findpeers_thread;
-    pthread_mutex_init(&addpeer_mutex,NULL);
-    pthread_mutex_init(&qrequest_mutex,NULL);
-    pthread_create(&findpeers_thread,NULL,&findpeers,0);
-    key_t key;
+    key_t key,respkey;
     char addr[64];
     uint8_t pubkey[32],*ptr;
-    int32_t i,msgid,sz,hsz,respid = 0;
+    int32_t i,j,msgid,sz,hsz;
     uint32_t utime;
     int32_t year,month,day,seconds,latest;
     struct qbuffer M,S,C;
-    struct EntityRequest E;
     struct quheader H;
+    struct subscriber *sp;
+    struct addrhash *ap;
     devurandom((uint8_t *)&utime,sizeof(utime));
     srand(utime);
-    utime = 0;
     signal(SIGPIPE, SIG_IGN);
     makefile(QUBIC_MSGPATH);
     key = ftok(QUBIC_MSGPATH, 'Q');
     msgid = msgget(key, 0666 | IPC_CREAT);
+    Addresses = (struct addrhash *)calloc(MAXADDRESSES,sizeof(*Addresses));
     printf("key %ld msgid %d\n",(long)key,msgid);
+    pthread_mutex_init(&addpeer_mutex,NULL);
+    pthread_create(&findpeers_thread,NULL,&findpeers,0);
+
+    utime = 0;
     latest = 0;
     while ( 1 )
     {
@@ -423,10 +419,10 @@ void qserver(void)
         //printf("sz.%d sizeH %ld, sz < 0 %d, sz > 8 %d\n",sz,sizeof(H),sz < 0,sz > sizeof(H));
         if ( sz >= (int32_t)sizeof(H) )
         {
-            respid = 0;
+            sp = 0;
             memcpy(&H,M.mesg_text,sizeof(H));
             hsz = ((H._size[2] << 16) + (H._size[1] << 8) + H._size[0]);
-            if ( hsz == (sz - sizeof(uint64_t)) || hsz == (sz - sizeof(uint64_t) - sizeof(uint32_t)) )
+            if ( hsz == (sz - sizeof(uint64_t)) || hsz == (sz - 2*sizeof(uint64_t)) )
             {
                 if ( H._type == REQUEST_ENTITY && hsz == sizeof(H)+sizeof(pubkey) )
                 {
@@ -434,38 +430,41 @@ void qserver(void)
                     memcpy(pubkey,ptr,sizeof(pubkey));
                     ptr += sizeof(pubkey);
                     pubkey2addr(pubkey,addr);
-                    if ( hsz == (sz - sizeof(uint64_t) - sizeof(uint32_t)) )
+                    if ( hsz == (sz - 2*sizeof(uint64_t)) )
                     {
-                        memcpy(&respid,ptr,sizeof(respid));
-                        ptr += sizeof(respid);
-                        if ( respid != 0 )
+                        memcpy(&respkey,ptr,sizeof(respkey));
+                        ptr += sizeof(respkey);
+                        if ( (sp= Subscriberget(respkey)) != 0 )
                         {
-                            printf("%s %s to respid.%d\n",M.mesg_type == 2 ? "subscribe":"",addr,respid);
-                            Tsubscriberadd(respid);
-                            entitysubscription(M.mesg_type != 2,respid,pubkey);
+                            if ( (sp->respid= msgget(sp->key,0666 | IPC_CREAT)) != 0 )
+                            {
+                                printf("%s %s to respid.%d key %s\n",M.mesg_type == 2 ? "subscribe":"",addr,sp->respid,amountstr(sp->key));
+                                ap = Addresshash(pubkey,utime);
+                                SubscriberAddr(sp,ap);
+                            }
                         }
                     }
-                    printf("%s %s\n",addr,respid!=0?"monitor":"");
+                    printf("%s %s\n",addr,sp!=0?"monitor":"");
                 }
                 else
                 {
-                    printf("add to peerQs\n");
-                    addpeerqueue(H._type,(uint8_t *)&M.mesg_text[sizeof(H)],hsz - sizeof(H));
-                    addpeerqueue(H._type,(uint8_t *)&M.mesg_text[sizeof(H)],hsz - sizeof(H));
-                    addpeerqueue(H._type,(uint8_t *)&M.mesg_text[sizeof(H)],hsz - sizeof(H));
+                    printf("add to peerQs type.%d hsz.%d\n",H._type,hsz);
+                    //addpeerqueue(H._type,(uint8_t *)&M.mesg_text[sizeof(H)],hsz - sizeof(H));
+                    //addpeerqueue(H._type,(uint8_t *)&M.mesg_text[sizeof(H)],hsz - sizeof(H));
+                    //addpeerqueue(H._type,(uint8_t *)&M.mesg_text[sizeof(H)],hsz - sizeof(H));
                 }
-                printf(" H.type %d, sz.%d, type.%ld RECV (hsz.%d %u)\n",H._type,sz,(long)M.mesg_type,hsz,respid);
-                if ( respid != 0 )
+                printf(" H.type %d, sz.%d, type.%ld RECV (hsz.%d %u)\n",H._type,sz,(long)M.mesg_type,hsz,sp->respid);
+                if ( sp != 0 && sp->respid != 0 )
                 {
-                    if ( (sz= (int32_t)msgrcv(respid,&C,sizeof(C),1,MSG_COPY | IPC_NOWAIT)) > 0 )
+                    if ( (sz= (int32_t)msgrcv(sp->respid,&C,sizeof(C),1,MSG_COPY | IPC_NOWAIT)) > 0 )
                     {
-                        printf("respid.%d still has message %d\n",respid,sz);
+                        printf("respid.%d still has message %d\n",sp->respid,sz);
                     }
                     else
                     {
                         S.mesg_type = 1;
-                        sprintf((char *)S.mesg_text,"qserver got your message of (%d) %s",hsz,M.mesg_type == 2 ? "subscribe":"");
-                        msgsnd(respid,&S,strlen((char *)S.mesg_text)+1,IPC_NOWAIT);
+                        sprintf((char *)S.mesg_text,"qserver got your message of (%d) %s %d %s",hsz,M.mesg_type == 2 ? "subscribe":"",sp->respid,amountstr(sp->key));
+                        msgsnd(sp->respid,&S,strlen((char *)S.mesg_text)+1,IPC_NOWAIT);
                     }
                 }
             }
@@ -473,44 +472,46 @@ void qserver(void)
         else usleep(10000);
         utime = set_current_ymd(&year,&month,&day,&seconds);
         if ( utime > LATEST_UTIME )
-        {
             LATEST_UTIME = utime;
-            for (i=1; i<=Numpeers; i++)
-                qrequest_add(i,REQUEST_CURRENT_TICK_INFO,0,0);
-        }
         if ( LATEST_TICK > latest )
         {
             latest = LATEST_TICK;
             printf("update subscribers with %d\n",latest);
-            S.mesg_type = 1;
-            sprintf((char *)S.mesg_text,"{\"tick\":%d}",latest);
-            for (i=0; i<sizeof(TSUBS)/sizeof(*TSUBS); i++)
+            for (i=0; i<Numsubs; i++)
             {
-                if ( TSUBS[i][0] != 0 )
+                sp = &SUBS[i];
+                S.mesg_type = 1;
+                sprintf((char *)S.mesg_text,"{\"tick\":%d,\"wasm\":1}",latest);
+                if ( sp->respid != 0 )
                 {
-                    if ( (sz= (int32_t)msgrcv(TSUBS[i][0],&C,sizeof(C),1,MSG_COPY | IPC_NOWAIT)) > 0 )
+                    if ( (sz= (int32_t)msgrcv(sp->respid,&C,sizeof(C),1,MSG_COPY | IPC_NOWAIT)) > 0 )
                     {
-                        TSUBS[i][1]++;
-                        printf("TSUBS[%d][0] respid.%d still has message %d errs.%d\n",i,respid,sz,TSUBS[i][1]);
+                        sp->errs++;
+                        printf("TSUBS[%d][0] respid.%d still has message %d errs.%d\n",i,sp->respid,sz,sp->errs);
                         // increase counter and close channel if too many errors
                     }
-                    else msgsnd(TSUBS[i][0],&S,strlen((char *)S.mesg_text)+1,IPC_NOWAIT);
+                    else
+                    {
+                        msgsnd(sp->respid,&S,strlen((char *)S.mesg_text)+1,IPC_NOWAIT);
+                        for (j=0; j<sp->numpubkeys; j++)
+                        {
+                            if ( (ap= Addresshash(&sp->pubkeys[j * 32],0)) != 0 )
+                            {
+                                if ( ap->tick >= LATEST_TICK-1000 )
+                                {
+                                    pubkey2addr(ap->entity.publicKey,addr);
+                                    entityjson((char *)S.mesg_text,addr,ap->entity,ap->tick);
+                                    msgsnd(sp->respid,&S,strlen((char *)S.mesg_text)+1+sizeof(uint64_t),IPC_NOWAIT);
+                                }
+                            }
+                        }
+                    }
                 }
-                else break;
-            }
-            for (i=0; i<sizeof(ESUBS)/sizeof(*ESUBS); i++)
-            {
-                if ( ESUBS[i].respid == 0 )
-                    break;
-                memset(&E,0,sizeof(E));
-                pubkey2addr(pubkey,addr);
-                memcpy(E.pubkey,ESUBS[i].pubkey,sizeof(E.pubkey));
-                addpeerqueue(REQUEST_ENTITY,E.pubkey,sizeof(E.pubkey));
-                addpeerqueue(REQUEST_ENTITY,E.pubkey,sizeof(E.pubkey));
-                addpeerqueue(REQUEST_ENTITY,E.pubkey,sizeof(E.pubkey));
             }
         }
     }
     msgctl(msgid,IPC_RMID,NULL);
 }
 
+
+    
