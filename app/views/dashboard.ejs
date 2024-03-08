@@ -5,59 +5,85 @@
     <title>Dashboard</title>
     <%- include('layout/header') %>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const socket = io();
-            let password = "<%=password %>";
-            let accounts = eval(`<%- JSON.stringify(result.display) %>`);
-            console.log(accounts)
-            let currentAccountIdx = 0;
+        const socket = io();
+        let password = "<%=password %>";
+        let accounts = eval(`<%- JSON.stringify(result.display) %>`);
+        console.log(accounts)
+        let currentAccountIdx = 0;
+        let deleteIdx = null;
 
-            // Send command to QWallet
-            function callLoginQwallet(command, flag) {
-                socket.emit('run', { command, flag });
-            }
+        function logout() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'logout';
+            document.body.appendChild(form);
+            form.submit();
+        }
 
-            // Function to handle result of Qwallet call
-            function handleResult(msg) {
-                const result = JSON.parse(msg.value);
-                const flag = msg.flag;
-                
+        // Send command to QWallet
+        function callLoginQwallet(command, flag) {
+            socket.emit('run', { command, flag });
+        }
+
+        // Function to handle result of Qwallet call
+        function handleResult(msg) {
+            const result = JSON.parse(msg.value);
+            const flag = msg.flag;
+
+            console.log(msg)
+            
+            if(result.result == 0) {
                 if (flag == 'addaccount' && password) {
-                    if(result.result == 0) {
-                        $.ajax({
-                            type: 'POST',
-                            url: '/addaccount',
-                            data: result,
-                        })
-                        .done((data) => {
-                            accounts.push(result.display)
-                            $("#accounts").append(
-                                `
-                                <div class="account">
-                                    <span>${result.display}</span>
-                                    <div class="account-setting">
-                                        <i class="fa fa-copy" onclick="copyText('${result.display}')"></i>
-                                        <i class="fa fa-trash"></i>
-                                    </div>
+                    $.ajax({
+                        type: 'POST',
+                        url: '/addaccount',
+                        data: result,
+                    })
+                    .done((data) => {
+                        accounts.push(result.display)
+                        $("#accounts").append(
+                            `
+                            <div class="account" id="account${accounts.length - 1}">
+                                <span>${result.display}</span>
+                                <div class="account-setting">
+                                    <i class="fa fa-copy" onclick="copyText('${result.display}')"></i>
+                                    <i class="fa fa-trash" onclick="deleteAccount('${accounts.length - 1}')"></i>
                                 </div>
-                                `
-                            )
-                        })
-                        .fail((error) => {
-                            console.log(error)
-                        })
-                    }
+                            </div>
+                            `
+                        )
+                    })
+                    .fail((error) => {
+                        console.log(error)
+                    })
                 }
 
                 else if (flag == 'transfer' && password) {
                     console.log(result, 'transfer')
                 }
+    
+                else if (flag == 'deleteaccount' && password) {
+                    $(`#account${deleteIdx}`).remove()
+                    console.log(result, 'deleteaccount')
+                }
             }
+        }
 
-            socket.on('result', handleResult)
-            socket.on('transfer', handleResult)
-            socket.on('testemit', (msg) => console.log(msg))
+        function deleteAccount(idx) {
+            // delete password,index
+            deleteIdx = idx
+            if(idx == 0) {
+                callLoginQwallet(`delete ${password},${idx}`, 'deleteaccount');
+                logout()
+            }
+            callLoginQwallet(`delete ${password},${idx}`, 'deleteaccount');
+        }
 
+        socket.on('result', handleResult)
+        socket.on('transfer', handleResult)
+        socket.on('testemit', (msg) => console.log(msg))
+
+        document.addEventListener('DOMContentLoaded', function () {
             // Setup button click handlers
             $("#add-account").click(() => {
                 const index = accounts.length
@@ -176,11 +202,11 @@
                 </div>
                 <div class="modal-body" id="accounts">
                     <% for(let i = 0; i < result.display.length; i ++) {%>
-                        <div class="account">
+                        <div class="account" id="account<%= i%>">
                             <span><%=result.display[i] %></span>
                             <div class="account-setting">
                                 <i class="fa fa-copy" onclick="copyText('<%=result.display[i] %>')"></i>
-                                <i class="fa fa-trash"></i>
+                                <i class="fa fa-trash" onclick="deleteAccount('<%=i %>')"></i>
                             </div>
                         </div>
                     <% } %>
