@@ -68,7 +68,7 @@ exports.postAddAccount = (req, res) => {
     io.emit('testemit', 'test emit message')
     seedInfo = { ...seedInfo, result: { ...seedInfo.result, display: `${seedInfo.result.display} ${req.body.display}` } }
     console.log(seedInfo, 'addaccount', req.body)
-    res.send('')
+    res.send('aaaa')
 }
 
 exports.postConfirm = (req, res) => {

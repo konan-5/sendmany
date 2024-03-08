@@ -23,18 +23,25 @@
                 const flag = msg.flag;
                 
                 if (flag == 'addaccount' && password) {
-                    console.log(result, 'addaccount')
                     if(result.result == 0) {
                         $.ajax({
                             type: 'POST',
                             url: '/addaccount',
                             data: result,
-                            dataType: 'json',
-                            encode: true,
                         })
                         .done((data) => {
-                            console.log(data)
                             accounts.push(result.display)
+                            $("#accounts").append(
+                                `
+                                <div class="account">
+                                    <span>${result.display}</span>
+                                    <div class="account-setting">
+                                        <i class="fa fa-copy" onclick="copyText('${result.display}')"></i>
+                                        <i class="fa fa-trash"></i>
+                                    </div>
+                                </div>
+                                `
+                            )
                         })
                         .fail((error) => {
                             console.log(error)
@@ -53,7 +60,8 @@
 
             // Setup button click handlers
             $("#add-account").click(() => {
-                callLoginQwallet(`login ${password},${accounts.length},derivation`, 'addaccount');
+                const index = accounts.length
+                callLoginQwallet(`login ${password},${index},derivation${index}`, 'addaccount');
             });
 
             $("#transfer").click(() => {
@@ -166,14 +174,13 @@
                         </svg>
                     </div>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" id="accounts">
                     <% for(let i = 0; i < result.display.length; i ++) {%>
                         <div class="account">
                             <span><%=result.display[i] %></span>
                             <div class="account-setting">
                                 <i class="fa fa-copy" onclick="copyText('<%=result.display[i] %>')"></i>
                                 <i class="fa fa-trash"></i>
-                                <i class="fa fa-lock"></i>
                             </div>
                         </div>
                     <% } %>
