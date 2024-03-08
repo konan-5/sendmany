@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -15,17 +16,17 @@
 #include "qhelpers.c"
 
 
-int32_t send_qbuffer(int32_t msgid,int64_t mtype,struct quheader *H,int32_t respid)
+int32_t send_qbuffer(int32_t msgid,int64_t mtype,struct quheader *H,uint64_t respkey)
 {
     int32_t hsz;
     struct qbuffer M;
     hsz = ((H->_size[2] << 16) + (H->_size[1] << 8) + H->_size[0]);
     M.mesg_type = mtype;
     memcpy(M.mesg_text,H,hsz);
-    if ( respid != 0 )
+    if ( respkey != 0 )
     {
-        memcpy(&M.mesg_text[hsz],&respid,sizeof(respid));
-        hsz += sizeof(respid);
+        memcpy(&M.mesg_text[hsz],&respkey,sizeof(respkey));
+        hsz += sizeof(respkey);
     }
     return(msgsnd(msgid,&M,hsz+sizeof(uint64_t),IPC_NOWAIT));
 }
@@ -57,14 +58,14 @@ int main()
     struct qbuffer M;
     struct quheader H;
     struct EntityRequest E;
-    int msgid,rcvmsgid,i,sz,len;
+    int msgid,rcvmsgid = 0,i,sz,len;
     setbuf(stdout, NULL);
     makefile(QUBIC_MSGPATH);
     key = ftok(QUBIC_MSGPATH, 'Q');
     msgid = msgget(key, 0666 | IPC_CREAT);
-    rcvkey = 0;
-    devurandom((uint8_t *)&rcvkey,7);
-    rcvmsgid = msgget(rcvkey, 0666 | IPC_CREAT);
+    //rcvkey = 0;
+    //devurandom((uint8_t *)&rcvkey,7);
+    //rcvmsgid = msgget(rcvkey, 0666 | IPC_CREAT);
     //printf("keys %lld %lld ids %d %d\n",(long long)key,(long long)rcvkey,msgid,rcvmsgid);
     pthread_create(&recv_thread,NULL,&recvloop,(void *)&rcvmsgid);
 
@@ -78,7 +79,14 @@ int main()
             if ( addr2pubkey(line,E.pubkey) > 0 )
             {
                 E.H = quheaderset(REQUEST_ENTITY,sizeof(E));
-                send_qbuffer(msgid,2,&E.H,rcvmsgid);
+                if ( rcvmsgid == 0 )
+                {
+                    rcvkey = 0;
+                    memcpy(&rcvkey,E.pubkey,7);
+                    rcvmsgid = msgget(rcvkey, 0666 | IPC_CREAT);
+                }
+                if ( rcvmsgid != 0 )
+                    send_qbuffer(msgid,2,&E.H,rcvkey);
             }
             else
             {
@@ -90,3 +98,5 @@ int main()
     }
     return(0);
 }
+
+    
