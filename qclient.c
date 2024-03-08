@@ -67,7 +67,7 @@ int main()
     //devurandom((uint8_t *)&rcvkey,7);
     //rcvmsgid = msgget(rcvkey, 0666 | IPC_CREAT);
     //printf("keys %lld %lld ids %d %d\n",(long long)key,(long long)rcvkey,msgid,rcvmsgid);
-    pthread_create(&recv_thread,NULL,&recvloop,(void *)&rcvmsgid);
+    //pthread_create(&recv_thread,NULL,&recvloop,(void *)&rcvmsgid);
 
     while ( 1 )
     {
@@ -84,6 +84,7 @@ int main()
                     rcvkey = 0;
                     memcpy(&rcvkey,E.pubkey,7);
                     rcvmsgid = msgget(rcvkey, 0666 | IPC_CREAT);
+                    pthread_create(&recv_thread,NULL,&recvloop,(void *)&rcvmsgid);
                 }
                 if ( rcvmsgid != 0 )
                     send_qbuffer(msgid,2,&E.H,rcvkey);
