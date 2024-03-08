@@ -352,9 +352,16 @@ body::after {
 .modal .modal-content .modal-body .account {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 20px;
 }
 .modal .modal-content .modal-body .account span {
   cursor: pointer;
+  width: 100%;
+  padding: 3px;
+}
+.modal .modal-content .modal-body .account span:hover {
+  background-color: #001f3f;
 }
 .modal .modal-content .modal-body .account .account-setting {
   display: flex;

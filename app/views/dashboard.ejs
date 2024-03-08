@@ -25,6 +25,13 @@
             socket.emit('run', { command, flag });
         }
 
+        function selectAddress(address) {
+            const idx = accounts.findIndex((item) => item == address);
+            currentAccountIdx = idx;
+            $("#current-account").text(accounts[idx])
+            $('#accountModal').modal('hide');
+        }
+
         // Function to handle result of Qwallet call
         function handleResult(msg) {
             const result = JSON.parse(msg.value);
@@ -44,7 +51,7 @@
                         $("#accounts").append(
                             `
                             <div class="account" id="account${accounts.length - 1}">
-                                <span>${result.display}</span>
+                                <span onclick="selectAddress('${result.display}')">${result.display}</span>
                                 <div class="account-setting">
                                     <i class="fa fa-copy" onclick="copyText('${result.display}')"></i>
                                     <i class="fa fa-trash" onclick="deleteAccount('${accounts.length - 1}')"></i>
@@ -108,7 +115,7 @@
                 <!-- <h2>Dashboard</h2> -->
             </div>
             <div class="center" data-toggle="modal" data-target="#accountModal">
-                <span>
+                <span id="current-account">
                     <%=result.display[0] %>
                 </span>
                 <i class="fa fa-caret-down"></i>
@@ -116,7 +123,7 @@
             <div class="right">
                 <i class="fa fa-cog" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></i>
                 <div class="dropdown-menu dropdown-menu-right">
-                    <button class="dropdown-item" type="button">Setting</button>
+                    <!-- <button class="dropdown-item" type="button">Setting</button> -->
                     <button class="dropdown-item" type="button" onclick="logout()">Logout</button>
                 </div>
             </div>
@@ -203,7 +210,7 @@
                 <div class="modal-body" id="accounts">
                     <% for(let i = 0; i < result.display.length; i ++) {%>
                         <div class="account" id="account<%= i%>">
-                            <span><%=result.display[i] %></span>
+                            <span onclick="selectAddress('<%=result.display[i] %>')"><%=result.display[i] %></span>
                             <div class="account-setting">
                                 <i class="fa fa-copy" onclick="copyText('<%=result.display[i] %>')"></i>
                                 <i class="fa fa-trash" onclick="deleteAccount('<%=i %>')"></i>

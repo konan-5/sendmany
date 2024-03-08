@@ -406,8 +406,15 @@ $container-padding: 60px;
             .account {
                 display: flex;
                 justify-content: space-between;
+                align-items: center;
+                gap: 20px;
                 span {
                     cursor: pointer;
+                    width: 100%;
+                    padding: 3px;
+                    &:hover {
+                        background-color: #001f3f;
+                    }
                 }
                 .account-setting {
                     display: flex;
