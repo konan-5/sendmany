@@ -403,6 +403,24 @@ $container-padding: 60px;
             color: white;
             overflow: auto;
             box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            .account {
+                display: flex;
+                justify-content: space-between;
+                span {
+                    cursor: pointer;
+                }
+                .account-setting {
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 5px;
+                    i {
+                        cursor: pointer;
+                        &:hover {
+                            color: red;
+                        }
+                    }
+                }
+            }
         }
     }
     .modal-dialog {

@@ -1,3 +1,5 @@
+const socketManager = require("./socketManager");
+
 let seedInfo = null;
 let confirmSeeds = new Array(24).fill("");
 
@@ -23,7 +25,7 @@ exports.getCli = (req, res) => {
 
 exports.getDashboard = (req, res) => {
     if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
-        res.render('dashboard', { ...seedInfo, result: { ...seedInfo.result, display: [seedInfo.result.display] } })
+        res.render('dashboard', { ...seedInfo, result: { ...seedInfo.result, display: seedInfo.result.display.split(' ') } })
     } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
         res.redirect('create')
     } else {
@@ -62,7 +64,10 @@ exports.postCheck = (req, res) => {
 }
 
 exports.postAddAccount = (req, res) => {
-    seedInfo
+    const io = socketManager.getIO()
+    io.emit('testemit', 'test emit message')
+    seedInfo = { ...seedInfo, result: { ...seedInfo.result, display: `${seedInfo.result.display} ${req.body.display}` } }
+    console.log(seedInfo, 'addaccount', req.body)
     res.send('')
 }
 

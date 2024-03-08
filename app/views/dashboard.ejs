@@ -6,47 +6,60 @@
     <%- include('layout/header') %>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            console.log("<%=result%>")
-            console.log("<%=password %>")
             const socket = io();
-            let password = null;
-            let accounts = <%- JSON.stringify(result.display) %>;
+            let password = "<%=password %>";
+            let accounts = eval(`<%- JSON.stringify(result.display) %>`);
+            console.log(accounts)
+            let currentAccountIdx = 0;
+
+            // Send command to QWallet
+            function callLoginQwallet(command, flag) {
+                socket.emit('run', { command, flag });
+            }
 
             // Function to handle result of Qwallet call
             function handleResult(msg) {
                 const result = JSON.parse(msg.value);
                 const flag = msg.flag;
-                console.log(result)
+                
                 if (flag == 'addaccount' && password) {
-                    accounts.push(result.display)
+                    console.log(result, 'addaccount')
+                    if(result.result == 0) {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/addaccount',
+                            data: result,
+                            dataType: 'json',
+                            encode: true,
+                        })
+                        .done((data) => {
+                            console.log(data)
+                            accounts.push(result.display)
+                        })
+                        .fail((error) => {
+                            console.log(error)
+                        })
+                    }
+                }
+
+                else if (flag == 'transfer' && password) {
+                    console.log(result, 'transfer')
                 }
             }
 
-            // Send command to QWallet
-            function callLoginQwallet(_password) {
-                password = _password;
-                socket.emit('run', { command: `login ${_password},${accounts.length},derivation`, flag: 'addaccount' });
-            }
-
-            function handleTransfer(msg) {
-                const message = JSON.parse(msg.value);
-                const flag = msg.flag;
-                console.log(message, flag)
-            }
-
             socket.on('result', handleResult)
-
-            socket.on('transfer', handleTransfer)
+            socket.on('transfer', handleResult)
+            socket.on('testemit', (msg) => console.log(msg))
 
             // Setup button click handlers
             $("#add-account").click(() => {
-                callLoginQwallet("<%= password%>");
+                callLoginQwallet(`login ${password},${accounts.length},derivation`, 'addaccount');
             });
 
             $("#transfer").click(() => {
                 const amount = $("#amount").val()
                 const address = $("#address").val()
-                socket.emit('run', { command: `send password,index,${address},${amount}`, flag: 'transfer' })
+                callLoginQwallet(`send password,${currentAccountIdx + 1},${address},${amount}`, 'transfer');
             })
 
         });
@@ -154,7 +167,16 @@
                     </div>
                 </div>
                 <div class="modal-body">
-                    <%=result.display %>
+                    <% for(let i = 0; i < result.display.length; i ++) {%>
+                        <div class="account">
+                            <span><%=result.display[i] %></span>
+                            <div class="account-setting">
+                                <i class="fa fa-copy" onclick="copyText('<%=result.display[i] %>')"></i>
+                                <i class="fa fa-trash"></i>
+                                <i class="fa fa-lock"></i>
+                            </div>
+                        </div>
+                    <% } %>
                 </div>
                 <!-- <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
