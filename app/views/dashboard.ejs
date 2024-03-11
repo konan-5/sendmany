@@ -8,10 +8,8 @@
         const socket = io();
         let password = "<%=password %>";
         let accounts = eval(`<%- JSON.stringify(result.display) %>`);
-        console.log(accounts)
         let currentAccountIdx = 0;
         let deleteIdx = null;
-        let checkAccountFlag = true;
 
         function delay(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
@@ -52,14 +50,23 @@
                         data: result,
                     })
                     .done((data) => {
-                        accounts.push(result.display)
+                        let count = 0;
+                        for (let i = accounts.length - 1; i >= 0; i--) {
+                            if (accounts[i] === '') {
+                                count++;
+                            } else {
+                                break; // Break the loop if the current element is not an empty string
+                            }
+                        }
+                        const index = accounts.length - count;
+                        accounts[index] = result.display
                         $("#accounts").append(
                             `
-                            <div class="account" id="account${accounts.length - 1}">
+                            <div class="account" id="account${index}">
                                 <span onclick="selectAddress('${result.display}')">${result.display}</span>
                                 <div class="account-setting">
                                     <i class="fa fa-copy" onclick="copyText('${result.display}')"></i>
-                                    <i class="fa fa-trash" onclick="deleteAccount('${accounts.length - 1}')"></i>
+                                    <i class="fa fa-trash" onclick="deleteAccount('${index}')"></i>
                                 </div>
                             </div>
                             `
@@ -82,7 +89,7 @@
                         data: {address: accounts[deleteIdx]},
                     })
                     .done((data) => {
-                        console.log(data)
+                        accounts[deleteIdx] = '';
                     })
                     .fail((error) => {
                         console.log(error)
@@ -91,53 +98,37 @@
 
                 else if (flag == 'checkAllAccount' && password) {
                     if(result.seedpage == 0) {
+                        console.log(result.display)
+                        accounts = result.display;
                         $.ajax({
                             type: 'POST',
                             url: 'postCheckAccount',
-                            data: {address: result.display}
+                            data: { accounts }
                         })
                         .done((data) => {
-                            if(!accounts.includes(result.display)) {
-                                accounts.push(result.display)
-                                $("#accounts").append(
-                                    `
-                                    <div class="account" id="account${accounts.length - 1}">
-                                        <span onclick="selectAddress('${result.display}')">${result.display}</span>
-                                        <div class="account-setting">
-                                            <i class="fa fa-copy" onclick="copyText('${result.display}')"></i>
-                                            <i class="fa fa-trash" onclick="deleteAccount('${accounts.length - 1}')"></i>
+                            accounts.map((account, idx) => {
+                                if(account != "") {
+                                    $("#accounts").append(
+                                        `
+                                        <div class="account" id="account${idx}">
+                                            <span onclick="selectAddress('${account}')">${account}</span>
+                                            <div class="account-setting">
+                                                <i class="fa fa-copy" onclick="copyText('${account}')"></i>
+                                                <i class="fa fa-trash" onclick="deleteAccount('${idx}')"></i>
+                                            </div>
                                         </div>
-                                    </div>
-                                    `
-                                )
-                            }
+                                        `
+                                    )
+                                }
+                            })
                         })
                         .fail((error) => {
                             console.log(error)
                         })
                     }
                 }
-            } else {
-                if(flag == 'checkAllAccount') {
-                    checkAccountFlag = false
-                }
             }
         }
-
-        async function checkAllAccount() {
-            let idx = 1;
-            const flag = 'checkAllAccount'
-            while(true) {
-                socket.emit('run', {command: `login ${password},${idx}`, flag})
-                idx ++;
-                await delay(300)
-                if(!checkAccountFlag) {
-                    return
-                }
-            }
-        }
-
-        checkAllAccount()
 
         function deleteAccount(idx) {
             // delete password,index
@@ -154,9 +145,18 @@
         socket.on('testemit', (msg) => console.log(msg))
 
         document.addEventListener('DOMContentLoaded', function () {
+            socket.emit('run', {command: `list ${password}`, flag: "checkAllAccount"})
             // Setup button click handlers
             $("#add-account").click(() => {
-                const index = accounts.length
+                let count = 0;
+                for (let i = accounts.length - 1; i >= 0; i--) {
+                    if (accounts[i] === '') {
+                        count++;
+                    } else {
+                        break; // Break the loop if the current element is not an empty string
+                    }
+                }
+                const index = accounts.length - count;
                 callLoginQwallet(`login ${password},${index},derivation${index}`, 'addaccount');
             });
 
@@ -271,15 +271,6 @@
                     </div>
                 </div>
                 <div class="modal-body" id="accounts">
-                    <% for(let i = 0; i < result.display.length; i ++) {%>
-                        <div class="account" id="account<%= i%>">
-                            <span onclick="selectAddress('<%=result.display[i] %>')"><%=result.display[i] %></span>
-                            <div class="account-setting">
-                                <i class="fa fa-copy" onclick="copyText('<%=result.display[i] %>')"></i>
-                                <i class="fa fa-trash" onclick="deleteAccount('<%=i %>')"></i>
-                            </div>
-                        </div>
-                    <% } %>
                 </div>
                 <!-- <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

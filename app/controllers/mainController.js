@@ -108,9 +108,7 @@ exports.postLogout = (req, res) => {
 }
 
 exports.postCheckAccount = (req, res) => {
-    if(!seedInfo.result.display.includes(req.body.address)) {
-        seedInfo = { ...seedInfo, result: { ...seedInfo.result, display: `${seedInfo.result.display} ${req.body.address}` } }
-    }
+    seedInfo = { ...seedInfo, result: { ...seedInfo.result, display: req.body.accounts.join(' ') } }
     res.send('success')
 }
 
