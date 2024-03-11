@@ -378,6 +378,37 @@ body::after {
   max-width: 768px;
 }
 
+.delete-account-modal {
+  color: #001426;
+}
+.delete-account-modal .modal-dialog .modal-content {
+  background-color: #0e4f7e;
+}
+.delete-account-modal .modal-dialog .modal-content .modal-header {
+  color: #f59090;
+  background-color: #0e4f7e;
+}
+.delete-account-modal .modal-dialog .modal-content .modal-body {
+  background-color: #0e4f7e;
+}
+.delete-account-modal .modal-dialog .modal-content .modal-body span {
+  color: #f59090;
+}
+.delete-account-modal .modal-dialog .modal-content .modal-footer {
+  display: flex;
+  justify-content: right;
+  gap: 10px;
+  padding: 10px 16px;
+}
+.delete-account-modal .modal-dialog .modal-content .modal-footer button {
+  outline: #002d4e;
+  background-color: transparent;
+  color: white;
+  border: none;
+  outline: none;
+  cursor: pointer;
+}
+
 .dropdown-menu {
   background-color: #002d4e;
 }

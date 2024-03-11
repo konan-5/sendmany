@@ -40,8 +40,6 @@
             const result = JSON.parse(msg.value);
             const flag = msg.flag;
 
-            console.log(msg)
-            
             if(result.result == 0) {
                 if (flag == 'addaccount' && password) {
                     $.ajax({
@@ -66,7 +64,7 @@
                                 <span onclick="selectAddress('${result.display}')">${result.display}</span>
                                 <div class="account-setting">
                                     <i class="fa fa-copy" onclick="copyText('${result.display}')"></i>
-                                    <i class="fa fa-trash" onclick="deleteAccount('${index}')"></i>
+                                    <i class="fa fa-trash" onclick="showDeleteAccountModal('${index}')"></i>
                                 </div>
                             </div>
                             `
@@ -98,7 +96,6 @@
 
                 else if (flag == 'checkAllAccount' && password) {
                     if(result.seedpage == 0) {
-                        console.log(result.display)
                         accounts = result.display;
                         $.ajax({
                             type: 'POST',
@@ -114,7 +111,7 @@
                                             <span onclick="selectAddress('${account}')">${account}</span>
                                             <div class="account-setting">
                                                 <i class="fa fa-copy" onclick="copyText('${account}')"></i>
-                                                <i class="fa fa-trash" onclick="deleteAccount('${idx}')"></i>
+                                                <i class="fa fa-trash" onclick="showDeleteAccountModal('${idx}')"></i>
                                             </div>
                                         </div>
                                         `
@@ -138,6 +135,45 @@
                 logout()
             }
             callLoginQwallet(`delete ${password},${idx}`, 'deleteaccount');
+            $("#deleteModal").modal('hide')
+            $("#deleteModal").remove()
+        }
+
+        function showDeleteAccountModal(idx) {
+            let modalBody = ""
+            if(idx == 0){
+                modalBody = "<span>This is a primary account. If you delete this account, all accounts will be deleted.</span> </br>"
+            }
+            $('body').append(
+                `
+                    <div class="modal delete-account-modal" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalTitle" aria-hidden="true" style="display: block">
+                        <div class="modal-dialog modal-dialog-centered" role="document" >
+                            <div class="modal-content" >
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteModalTitle">Delete Accout?</h5>
+                                    <div class="config">
+                                        <svg data-dismiss="modal" aria-label="Close" onclick="$('#deleteModal').modal('hide'); $('#deleteModal').remove();"
+                                            class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-vubbuv" focusable="false"
+                                            aria-hidden="true" viewBox="0 0 24 24" data-testid="CloseIcon">
+                                            <path fill="#fff"
+                                                d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="modal-body">
+                                    ${modalBody}
+                                    ${accounts[idx]}
+                                </div>
+                                <div class="modal-footer">
+                                    <button onclick="deleteAccount(${idx})">Yes</button>
+                                    <button onclick="$('#deleteModal').modal('hide'); $('#deleteModal').remove();">No</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            )
         }
 
         socket.on('result', handleResult)
@@ -280,6 +316,7 @@
         </div>
     </div>
     <script src="./assets/javascript/script.js"></script>
+
 </body>
 
 </html>
