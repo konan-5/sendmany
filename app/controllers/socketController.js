@@ -5,6 +5,7 @@ module.exports = function (io) {
         console.log('A user connected');
         let mainChild = null;
         let v1Child = null;
+        let liveSocketChild = null;
 
         const killChildProcesses = () => {
             if (mainChild) {
@@ -15,6 +16,10 @@ module.exports = function (io) {
                 v1Child.kill();
                 v1Child = null;
             }
+            if (liveSocketChild) {
+                liveSocketChild.kill();
+                liveSocketChild = null;
+            }
         };
 
         socket.on('start', (msg) => {
@@ -22,6 +27,7 @@ module.exports = function (io) {
 
             mainChild = spawn('node', ['./emscripten/command.js']);
             v1Child = spawn('node', ['./emscripten/v1request.js']);
+            liveSocketChild = spawn('node', ['./emscripten/livesocket.js'])
 
             mainChild.stdout.on('data', (data) => {
                 socket.emit('log', { value: data.toString(), flag: 'log' });

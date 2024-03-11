@@ -10,6 +10,7 @@
         let accounts = eval(`<%- JSON.stringify(result.display) %>`);
         let currentAccountIdx = 0;
         let deleteIdx = null;
+        socket.emit('broadcast', { command: 'liveSocketRequest', message: {address: accounts[0]} })
 
         function delay(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
@@ -32,6 +33,7 @@
             const idx = accounts.findIndex((item) => item == address);
             currentAccountIdx = idx;
             $("#current-account").text(accounts[idx])
+            socket.emit('broadcast', { command: 'liveSocketRequest', message: {address: accounts[idx]} })
             $('#accountModal').modal('hide');
         }
 
@@ -176,9 +178,14 @@
             )
         }
 
+        function handleLiveSocket(msg) {
+            console.log(msg)
+        }
+
         socket.on('result', handleResult)
         socket.on('transfer', handleResult)
         socket.on('testemit', (msg) => console.log(msg))
+        socket.on('liveSocketResponse', handleLiveSocket)
 
         document.addEventListener('DOMContentLoaded', function () {
             socket.emit('run', {command: `list ${password}`, flag: "checkAllAccount"})
