@@ -39,6 +39,7 @@
 
 
 #define JSON_BUFSIZE (65536)
+#define MAX_INDEX 100
 
 int32_t LATEST_TICK,NUMADDRESSES;
 char LOGINADDRESSES[64][64];
@@ -61,7 +62,7 @@ char QWALLET_ARGS[4][1024],QWALLET_RESULTS[(sizeof(QWALLET_ARGS)/sizeof(*QWALLET
 char *wasm_result(int32_t retval,char *displaystr,int32_t seedpage)
 {
     static char json[JSON_BUFSIZE],tmpstr[JSON_BUFSIZE-128];
-    if ( displaystr[0] != '{' )
+    if ( displaystr[0] != '{' && displaystr[0] != '[' )
         sprintf(tmpstr,"\"%s\"",displaystr);
     else strcpy(tmpstr,displaystr);
     sprintf(json,"{\"result\":%d,\"display\":%s,\"seedpage\":%d}",retval,tmpstr,seedpage);
@@ -162,18 +163,21 @@ int32_t accountcodec(char *rw,char *password,int32_t index,uint8_t subseed[32])
     return(retval);
 }
 
-char *sendfunc(char **argv,int32_t argc)
+char *_sendfunc(char **argv,int32_t argc,int32_t txtype)
 {
     static char str[4096+1024];
     char *password,*dest,txid[64],addr[64],rawhex[4096];
     uint8_t txdigest[32],subseed[32],privatekey[32],publickey[32],destpub[32],extradata[MAX_INPUT_SIZE];
     int64_t amount;
     int32_t txtick,datalen=0,index = 0;
-    if ( argc < 4 || argc > 5 )
-        return(wasm_result(-2,"sendfunc needs password index dest amount [hexstr]",0));
+    if ( argc < 5 || argc > 6 )
+        return(wasm_result(-2,"_sendfunc needs password index txtick dest amount [hexstr]",0));
     password = argv[0];
     index = atoi(argv[1]);
-    dest = argv[2];
+    if ( index < 0 || index >= MAX_INDEX )
+        return(wasm_result(-3,"_sendfunc needs non negative index less than 100",0));
+    txtick = atoi(argv[2]);
+    dest = argv[3];
     if ( addr2pubkey(dest,destpub) == 0 )
     {
         char checkaddr[64];
@@ -185,27 +189,28 @@ char *sendfunc(char **argv,int32_t argc)
                 checkaddr[i] = j;
                 if ( checkSumIdentity(checkaddr) != 0 )
                 {
-                    sprintf(str,"send illegal dest: changing %dth to %c to %s passes checksum",i,j,checkaddr);
+                    sprintf(str,"_send illegal dest: changing %dth to %c to %s passes checksum",i,j,checkaddr);
                     return(wasm_result(-3,str,0));
                 }
             }
         }
         return(wasm_result(-4,"illegal destination address, bad checksum",0));
     }
-    amount = atoll(argv[3]);
+    amount = atoll(argv[4]);
     txid[0] = 0;
     if ( accountcodec("rb",password,index,subseed) == 0 )
     {
         getPrivateKeyFromSubSeed(subseed,privatekey);
         getPublicKeyFromPrivateKey(privatekey,publickey);
         pubkey2addr(publickey,addr);
-        if ( argc == 5 )
+        if ( argc == 6 )
         {
-            datalen = strlen(argv[4]) / 2;
-            hexToByte(argv[4],extradata,datalen);
+            datalen = strlen(argv[5]) / 2;
+            hexToByte(argv[5],extradata,datalen);
         }
-        txtick = LATEST_TICK + TICKOFFSET;
-        create_rawtxhex(rawhex,txid,txdigest,subseed,0,publickey,destpub,amount,extradata,datalen,txtick);
+        if ( txtick == 0 )
+            txtick = LATEST_TICK + TICKOFFSET;
+        create_rawtxhex(rawhex,txid,txdigest,subseed,txtype,publickey,destpub,amount,extradata,datalen,txtick);
         txid[60] = 0;
         sprintf(str,"{\"txtick\":%d,\"txid\":\"%s\",\"rawhex\":\"%s\",\"addr\":\"%s\",\"amount\":%s,\"dest\":\"%s\"}",txtick,txid,rawhex,addr,amountstr(amount),dest);
         memset(subseed,0xff,sizeof(subseed));
@@ -215,6 +220,35 @@ char *sendfunc(char **argv,int32_t argc)
         return(retstr);
     }
     return(wasm_result(-5,"unknown user account password file not found or invalid index",0));
+}
+
+char *sendfunc(char **argv,int32_t argc)
+{
+    return(_sendfunc(argv,argc,0));
+}
+
+char *sendmanyfunc(char **argv,int32_t argc)
+{
+    char hexstr[MAX_INPUT_SIZE*2+1],totalstr[16],destaddr[64];
+    uint8_t destpub[32];
+    int64_t total = 0;
+    /*pubkeypay payments;
+    memset(&payments,0,sizeof(payments));
+    {
+        //argv[3 + i*2], argv[4 + i*2]
+        // put in pubkeys and amounts, += total;
+    }
+    byteToHex((uint8_t *)&payments,hexstr,sizeof(payments));*/
+    memset(destpub,0,sizeof(destpub));
+    ((uint64_t *)destpub)[0] = QUTIL_CONTRACT_ID;
+    pubkey2addr(destpub,destaddr);
+    total += SENDMANYFEE;
+    sprintf(totalstr,"%s",amountstr(total));
+    argc = 6;
+    argv[3] = destaddr;
+    argv[4] = totalstr;
+    argv[5] = hexstr;
+    return(_sendfunc(argv,argc,SENDTOMANYV1));
 }
 
 void subseedcombine(uint8_t subseed[32],uint8_t subseed2[32])
@@ -240,12 +274,12 @@ char *loginfunc(char **argv,int32_t argc)
     if ( argc >= 2 )
     {
         index = atoi(argv[1]);
-        if ( index < 0 )
-            return(wasm_result(-7,"login needs non negative index less than maxaddresses",0));
+        if ( index < 0 || index >= MAX_INDEX )
+            return(wasm_result(-7,"login needs non negative index less than 100",0));
     }
     if ( accountcodec("rb",password,0,subseed) == 0 )
     {
-        if ( index > 0 )
+        if ( index > 0 && index < MAX_INDEX )
         {
             if ( argc == 3 )
             {
@@ -407,6 +441,49 @@ char *deletefunc(char **argv,int32_t argc)
     return(wasm_result(0,retstr,0));
 }
 
+char *listfunc(char **argv,int32_t argc)
+{
+    FILE *fp;
+    int32_t index;
+    uint8_t salt[32],origsubseed[32],subseed[32],subseed2[32],privkey[32],pubkey[32];
+    char *password,fname[512],*retstr;
+    static char addrs[MAX_INDEX][64],addrsarray[MAX_INDEX * 80];
+    if ( argc != 1 )
+        return(wasm_result(-20,"list needs password",0));
+    password = argv[0];
+    memset(addrs,0,sizeof(addrs));
+    if ( accountcodec("rb",password,0,origsubseed) == 0 )
+    {
+        for (index=0; index<MAX_INDEX; index++)
+        {
+            memcpy(subseed,origsubseed,32);
+            if ( index > 0 )
+            {
+                if ( accountcodec("rb",password,index,subseed2) != 0 )
+                    continue;
+                subseedcombine(subseed,subseed2);
+            }
+            getPrivateKeyFromSubSeed(subseed,privkey);
+            getPublicKeyFromPrivateKey(privkey,pubkey);
+            pubkey2addr(pubkey,addrs[index]);
+            //printf("index.%d %s\n",index,addrs[index]);
+        }
+    }
+    else return(wasm_result(-21,"password has no seed",0));
+    memset(privkey,0xff,sizeof(privkey));
+    memset(origsubseed,0xff,sizeof(origsubseed));
+    memset(subseed,0xff,sizeof(subseed));
+    memset(subseed2,0xff,sizeof(subseed2));
+    strcpy(addrsarray,"[");
+    for (index=0; index<MAX_INDEX; index++)
+        sprintf(addrsarray + strlen(addrsarray),"\"%s\",",addrs[index]);
+    addrsarray[strlen(addrsarray)-1] = ']';
+    //printf("%s\n",addrsarray);
+    retstr = wasm_result(0,addrsarray,0);
+    printf("%s\n",retstr);
+    return(retstr);
+}
+
 struct qcommands
 {
     const char *command;
@@ -416,15 +493,17 @@ struct qcommands
 {
     { "addseed", addseedfunc, "addseed password,seed" },
     { "login", loginfunc, "login password,[index [,derivation]]" },
+    { "list", listfunc, "list password" },
     { "delete", deletefunc, "delete password,index" },
     { "checkavail", checkavailfunc, "checkavail password" },
-    { "send", sendfunc, "send password,index,dest,amount[,extrahex]" },
+    { "send", sendfunc, "send password,index,txtick,dest,amount[,extrahex]" },
+    { "sendmany", sendmanyfunc, "send password,index,txtick,dest,amount[,dest2,amount2,...]" },
 };
 
 char *_qwallet(char *_args)
 {
     int32_t i,j,len,argc = 0;
-    char *argv[16],cmd[64],args[1024];
+    char *argv[64],cmd[64],args[1024];
     args[sizeof(args)-1] = 0;
     strncpy(args,_args,sizeof(args)-1);
     for (i=0; args[i]!=0&&i<sizeof(cmd)-1; i++)
@@ -502,18 +581,7 @@ char *qwallet(char *_args)
     }
     else if ( strncmp(_args,(char *)"v1request",9) == 0 )
     {
-        /*char reqstr[512];
-        if ( (rand() % 2) == 0 )
-        {
-            if ( LOGINADDRESSES[toggle] == 0 || (rand() % 2) == 0 )
-                return(wasm_result(0,"status",0));
-            sprintf(reqstr,"address/%s",LOGINADDRESSES[toggle]);
-            toggle = (toggle + 1) % NUMADDRESSES;
-            toggle %= (sizeof(LOGINADDRESSES)/sizeof(*LOGINADDRESSES));
-            if ( LOGINADDRESSES[toggle][0] == 0 )
-                toggle = 0;
-            return(wasm_result(0,reqstr,0));
-        }*/
+        return(wasm_result(0,"status",0));
         return(wasm_result(-13,(char *)"no v1requests available",0));
     }
     else if ( strncmp(_args,(char *)"v1status",8) == 0 )
@@ -621,5 +689,7 @@ int main()
     return(0);
 }
 #endif
+
+// finish sendmany extradata construction
 
     
