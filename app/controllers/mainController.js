@@ -106,3 +106,16 @@ exports.postLogout = (req, res) => {
     reset()
     res.redirect('login')
 }
+
+exports.postCheckAccount = (req, res) => {
+    if(!seedInfo.result.display.includes(req.body.address)) {
+        seedInfo = { ...seedInfo, result: { ...seedInfo.result, display: `${seedInfo.result.display} ${req.body.address}` } }
+    }
+    res.send('success')
+}
+
+exports.postDeleteAccount = (req, res) => {
+    console.log(req.body.address)
+    seedInfo = { ...seedInfo, result: { ...seedInfo.result, display: seedInfo.result.display.replace(` ${req.body.address}`, "")} }
+    res.send('success')
+}

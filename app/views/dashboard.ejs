@@ -11,6 +11,11 @@
         console.log(accounts)
         let currentAccountIdx = 0;
         let deleteIdx = null;
+        let checkAccountFlag = true;
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
 
         function logout() {
             const form = document.createElement('form');
@@ -71,10 +76,68 @@
     
                 else if (flag == 'deleteaccount' && password) {
                     $(`#account${deleteIdx}`).remove()
-                    console.log(result, 'deleteaccount')
+                    $.ajax({
+                        type: 'POST',
+                        url: 'postDeleteAccount',
+                        data: {address: accounts[deleteIdx]},
+                    })
+                    .done((data) => {
+                        console.log(data)
+                    })
+                    .fail((error) => {
+                        console.log(error)
+                    })
+                }
+
+                else if (flag == 'checkAllAccount' && password) {
+                    if(result.seedpage == 0) {
+                        $.ajax({
+                            type: 'POST',
+                            url: 'postCheckAccount',
+                            data: {address: result.display}
+                        })
+                        .done((data) => {
+                            if(!accounts.includes(result.display)) {
+                                accounts.push(result.display)
+                                $("#accounts").append(
+                                    `
+                                    <div class="account" id="account${accounts.length - 1}">
+                                        <span onclick="selectAddress('${result.display}')">${result.display}</span>
+                                        <div class="account-setting">
+                                            <i class="fa fa-copy" onclick="copyText('${result.display}')"></i>
+                                            <i class="fa fa-trash" onclick="deleteAccount('${accounts.length - 1}')"></i>
+                                        </div>
+                                    </div>
+                                    `
+                                )
+                            }
+                        })
+                        .fail((error) => {
+                            console.log(error)
+                        })
+                    }
+                }
+            } else {
+                if(flag == 'checkAllAccount') {
+                    checkAccountFlag = false
                 }
             }
         }
+
+        async function checkAllAccount() {
+            let idx = 1;
+            const flag = 'checkAllAccount'
+            while(true) {
+                socket.emit('run', {command: `login ${password},${idx}`, flag})
+                idx ++;
+                await delay(300)
+                if(!checkAccountFlag) {
+                    return
+                }
+            }
+        }
+
+        checkAllAccount()
 
         function deleteAccount(idx) {
             // delete password,index
