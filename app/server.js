@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const app = express();
 const http = require('http').createServer(app);
@@ -21,6 +22,9 @@ app.use(express.static('public'));
 // Use body-parser to parse form data
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+//Use morgan to view api logs
+app.use(morgan('tiny'));
 
 // Setup routes
 app.use('/api', userRoutes);

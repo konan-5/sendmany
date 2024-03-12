@@ -33,6 +33,7 @@
         function selectAddress(address) {
             const idx = accounts.findIndex((item) => item == address);
             currentAccountIdx = idx;
+            console.log(currentAccountIdx);
             $("#current-account").text(accounts[idx])
             socket.emit('broadcast', { command: 'liveSocketRequest', message: {address} })
             $('#accountModal').modal('hide');
@@ -180,10 +181,12 @@
         }
 
         function handleLiveSocket(msg) {
-            console.log(msg, typeof msg)
+            console.log(msg, typeof msg);
             try {
                 let _msg = JSON.parse(msg);
-                if(_msg.address) {
+                const currentAccount = document.getElementById('current-account').textContent;
+                const cleanedString = currentAccount.replace(/\s+/g, '');
+                if(_msg.address && _msg.address == cleanedString) {
                     $("#balance").text(_msg.balance)
                 } else {
                     $("#tick").text(_msg.tick)
@@ -215,9 +218,11 @@
             });
 
             $("#transfer").click(() => {
-                const amount = $("#amount").val()
-                const address = $("#address").val()
-                callLoginQwallet(`send password,${currentAccountIdx + 1},${address},${amount}`, 'transfer');
+                const amount = $("#amount").val();
+                const address = $("#address").val();
+                const txtick = $('#tick').text();
+                console.log(txtick);
+                callLoginQwallet(`send password,${currentAccountIdx},${txtick},${address},${amount}`, 'transfer');
             })
 
         });
@@ -279,12 +284,15 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td scope="row">
+                                <td scope="row" class="no-data" colspan="4">
+                                    <div>
+                                        <img src="./assets/images/no_data.png" alt="">
+                                    </div>
                                     No activity
                                 </td>
+                                <!-- <td></td>
                                 <td></td>
-                                <td></td>
-                                <td></td>
+                                <td></td> -->
                             </tr>
                             <!-- <tr>
                                 <td scope="row">9 Mar</td>

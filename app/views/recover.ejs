@@ -20,8 +20,22 @@
                                 actionPath = '/dashboard';
                             }
                             const form = document.createElement('form');
-                            form.method = 'GET';
+                            form.method = 'POST';
                             form.action = actionPath;
+
+                            // Add password input to form
+                            const passwordInput = document.createElement('input');
+                            passwordInput.type = 'hidden';
+                            passwordInput.name = 'password';
+                            passwordInput.value = password;
+                            form.appendChild(passwordInput);
+
+                            // Add result input to form
+                            const resultInput = document.createElement('input');
+                            resultInput.type = 'hidden';
+                            resultInput.name = 'result';
+                            resultInput.value = JSON.stringify(result);
+                            form.appendChild(resultInput);
 
                             document.body.appendChild(form);
                             form.submit();
@@ -133,7 +147,6 @@
 
                     if (wordsPassword == confirmWordsPassword && wordsPassword != '' && confirmWordsPassword != '') {
                         const firstLetter = wordsPassword.charAt(0);
-                        console.log(firstLetter);
                         if (firstLetter === 'Q') {
                             Toastify({
                                 text: "Your password mustn't start with Q letter.",
@@ -165,7 +178,6 @@
 
                     if (charsPassword == confirmCharsPassword && charsPassword != '' && confirmCharsPassword != '') {
                         const firstLetter = charsPassword.charAt(0);
-                        console.log(firstLetter);
                         if (firstLetter === 'Q') {
                             charsRecover(charsPassword);
                         } else {
@@ -209,7 +221,7 @@
         <img class="logo" src="./assets/images/logo.png" width="100px" />
         <h2>Restore</h2>
         <div class="description">
-            There are two ways to restore your previous account
+            There are two ways to restore your previous account.
         </div>
         <div class="seed-words" id="seed-words" data-toggle="modal" data-target="#wordsModal">
             <div class="seed-words-img">
@@ -256,17 +268,20 @@
                                 placeholder="Re-type your password">
                         </div>
                     </div>
-                    <ul>
-                        <% for (var i=1; i <=24; i++) { %>
-                            <li>
-                                <span>
-                                    <%= i %>
-                                </span>
-                                <input type="text" name="<%= 'input_' + i %>" class="inputValue"
-                                    id="<%= 'input_' + i %>">
-                            </li>
-                            <% } %>
-                    </ul>
+                    <div class="start-q-password">
+                        <p>Please check your seed again before entering.</p>
+                        <ul>
+                            <% for (var i=1; i <=24; i++) { %>
+                                <li>
+                                    <span>
+                                        <%= i %>
+                                    </span>
+                                    <input type="text" name="<%= 'input_' + i %>" class="inputValue"
+                                        id="<%= 'input_' + i %>">
+                                </li>
+                                <% } %>
+                        </ul>
+                    </div>
                     <div class="check">
                         <input type="checkbox" name="" id="words-checkbox">
                         <p>Please check again that you have entered it correctly.</p>
@@ -304,9 +319,12 @@
                                     placeholder="Re-type your password">
                             </div>
                         </div>
-                        <li>
-                            <input type="text" name="" id="seedChars" placeholder="Enter your 55 chars seed">
-                        </li>
+                        <div class="start-q-password">
+                            <p>Please check your seed again before entering.</p>
+                            <li>
+                                <input type="text" name="" id="seedChars" placeholder="Enter your 55 chars seed">
+                            </li>
+                        </div>
                     </ul>
                     <div class="check">
                         <input type="checkbox" name="" id="chars-checkbox">

@@ -123,6 +123,7 @@ exports.postCheckAccount = (req, res) => {
 
 exports.postDeleteAccount = (req, res) => {
     console.log(req.body.address)
+    console.log(seedInfo)
     seedInfo = { ...seedInfo, result: { ...seedInfo.result, display: seedInfo.result.display.replace(` ${req.body.address}`, "")} }
     res.send('success')
 }
