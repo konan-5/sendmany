@@ -8,6 +8,7 @@
         const socket = io();
         let password = "<%=password %>";
         let accounts = eval(`<%- JSON.stringify(result.display) %>`);
+        console.log(accounts);
         let currentAccountIdx = 0;
         let deleteIdx = null;
         socket.emit('broadcast', { command: 'liveSocketRequest', message: {address: accounts[0]} })

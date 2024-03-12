@@ -19,6 +19,14 @@ exports.getLogin = (req, res) => {
     }
 }
 
+exports.getRecover = (req, res) => {
+    try {
+        res.render('recover')
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 exports.getCli = (req, res) => {
     res.render('index')
 }
@@ -98,6 +106,7 @@ exports.postConfirm = (req, res) => {
 }
 
 exports.postDashboard = (req, res) => {
+    console.log("PostDashboard")
     seedInfo = { ...req.body, result: JSON.parse(req.body.result) }
     res.redirect('dashboard')
 }

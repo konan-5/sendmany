@@ -7,6 +7,7 @@ router.get('/', mainController.getCli);
 router.get('/dashboard', mainController.getDashboard);
 router.get('/check', mainController.getCheck);
 router.get('/create', mainController.getCreate);
+router.get('/recover', mainController.getRecover)
 
 router.post('/check', mainController.postCheck);
 router.post('/create', mainController.postCreate);
