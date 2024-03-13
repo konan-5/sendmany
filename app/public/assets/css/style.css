@@ -679,9 +679,6 @@ body::after {
   font-size: 18px;
   color: rgba(255, 255, 255, 0.7019607843);
 }
-.start-q-password li {
-  border-radius: 5px;
-}
 .start-q-password #seedChars {
   padding-top: 5px;
   padding-bottom: 5px;
