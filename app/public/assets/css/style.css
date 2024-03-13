@@ -297,15 +297,16 @@ body::after {
   margin-right: 5px;
   border: 1.5px solid #17517a;
   border-radius: 5px;
-  width: 80px;
+  width: 120px;
   outline: none;
+  text-align: center;
   background-color: transparent;
 }
 .dashboard-container .body .more-info .send input:focus {
   border-color: #2777b1;
 }
 .dashboard-container .body .more-info .send input.address {
-  width: 500px;
+  width: 720px;
 }
 .dashboard-container .body .more-info .send button {
   outline: none;

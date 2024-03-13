@@ -336,8 +336,9 @@ $container-padding: 60px;
           margin-right: 5px;
           border: 1.5px solid #17517a;
           border-radius: 5px;
-          width: 80px;
+          width: 120px;
           outline: none;
+          text-align: center;
           background-color: transparent;
 
           &:focus {
@@ -346,7 +347,7 @@ $container-padding: 60px;
         }
 
         input.address {
-          width: 500px;
+          width: 720px;
         }
 
         button {
@@ -845,12 +846,3 @@ $container-padding: 60px;
     }
   }
 }
-
-// #create-btn {
-//   background-color: #6635b3;
-//   margin-top: 5px;
-
-//   &:hover {
-//     background-color: #4c2a85;
-//   }
-// }

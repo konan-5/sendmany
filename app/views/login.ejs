@@ -17,7 +17,6 @@
                         let status = document.querySelector(".check-available");
                         let margin = document.getElementById('password');
                         if(result.result == 0){
-                            console.log(flag, "flag");
                             const qPassword = "Q" + password;
                             status.style.display = 'block';
                             margin.style.marginBottom = '10px';
@@ -95,7 +94,6 @@
                 function handleChange() {
                     hasRun = false;
                     const _password = $("#password").val();
-                    console.log(_password);
                     walletCheck(_password);
                 }
 
@@ -120,7 +118,6 @@
                 });
 
                 $('#password').keypress(function (event) {
-                    console.log('abcdef')
                     if (event.which == 13) {
                         event.preventDefault();
                         login();
