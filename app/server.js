@@ -1,15 +1,17 @@
 require('dotenv').config();
 const express = require('express');
+const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http);
 const userRoutes = require('./routes/userRoutes');
 const mainRoutes = require('./routes/mainRoutes');
+const socketManager = require('./controllers/socketManager')
 
 const { PORT } = require('./utils/constants');
 
-const socketController = require('./controllers/socketController')(io);
+const io = socketManager.init(http);
+const socketController = require('./controllers/socketController')(io)
 
 // Set the view engine to ejs
 app.set('view engine', 'ejs');
@@ -20,6 +22,9 @@ app.use(express.static('public'));
 // Use body-parser to parse form data
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+//Use morgan to view api logs
+app.use(morgan('tiny'));
 
 // Setup routes
 app.use('/api', userRoutes);

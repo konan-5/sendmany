@@ -59,3 +59,26 @@ function copyTextContent(element) {
         }
     }
 }
+
+function copyText(text) {
+    // Check if the clipboard API is available
+    if (navigator.clipboard && window.isSecureContext) {
+        // Use the Clipboard API (modern approach)
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                console.log("Content copied to clipboard");
+                Toastify({
+                    text: "Address copied to clipboard.",
+                    className: "success",
+                    style: {
+                        background: "#5468ff",
+                        color: "white",
+                    }
+                }).showToast();
+            })
+            .catch((error) => {
+                console.error("Copy failed", error);
+            });
+    } else {
+    }
+}

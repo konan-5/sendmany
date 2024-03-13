@@ -1,3 +1,5 @@
+const socketManager = require("./socketManager");
+
 let seedInfo = null;
 let confirmSeeds = new Array(24).fill("");
 
@@ -17,13 +19,21 @@ exports.getLogin = (req, res) => {
     }
 }
 
+exports.getRecover = (req, res) => {
+    try {
+        res.render('recover')
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 exports.getCli = (req, res) => {
     res.render('index')
 }
 
 exports.getDashboard = (req, res) => {
     if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 0) {
-        res.render('dashboard', { ...seedInfo, result: { ...seedInfo.result, display: [seedInfo.result.display] } })
+        res.render('dashboard', { ...seedInfo, result: { ...seedInfo.result, display: seedInfo.result.display.split(' ') } })
     } else if (seedInfo && seedInfo.result.result == 0 && seedInfo.result.seedpage == 1) {
         res.redirect('create')
     } else {
@@ -62,8 +72,11 @@ exports.postCheck = (req, res) => {
 }
 
 exports.postAddAccount = (req, res) => {
-    seedInfo
-    res.send('')
+    const io = socketManager.getIO()
+    io.emit('testemit', 'test emit message')
+    seedInfo = { ...seedInfo, result: { ...seedInfo.result, display: `${seedInfo.result.display} ${req.body.display}` } }
+    console.log(seedInfo, 'addaccount', req.body)
+    res.send('aaaa')
 }
 
 exports.postConfirm = (req, res) => {
@@ -93,6 +106,7 @@ exports.postConfirm = (req, res) => {
 }
 
 exports.postDashboard = (req, res) => {
+    console.log("PostDashboard")
     seedInfo = { ...req.body, result: JSON.parse(req.body.result) }
     res.redirect('dashboard')
 }
@@ -100,4 +114,16 @@ exports.postDashboard = (req, res) => {
 exports.postLogout = (req, res) => {
     reset()
     res.redirect('login')
+}
+
+exports.postCheckAccount = (req, res) => {
+    seedInfo = { ...seedInfo, result: { ...seedInfo.result, display: req.body.accounts.join(' ') } }
+    res.send('success')
+}
+
+exports.postDeleteAccount = (req, res) => {
+    console.log(req.body.address)
+    console.log(seedInfo)
+    seedInfo = { ...seedInfo, result: { ...seedInfo.result, display: seedInfo.result.display.replace(` ${req.body.address}`, "")} }
+    res.send('success')
 }
