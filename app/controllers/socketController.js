@@ -43,6 +43,7 @@ module.exports = function (io) {
         });
 
         socket.on('run', (msg) => {
+            console.log(msg.command)
             socket.broadcast.emit('qwallet', msg);
         });
 

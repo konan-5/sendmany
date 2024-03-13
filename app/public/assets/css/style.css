@@ -213,6 +213,10 @@ body::after {
   color: #fff;
   font-size: 16px;
 }
+.container .check-available {
+  color: red;
+  display: none;
+}
 .container .backup {
   margin-top: 20px;
   text-align: left;
@@ -221,7 +225,7 @@ body::after {
 .container input[type=submit] {
   width: 100%;
   padding: 10px;
-  margin-top: 20px;
+  margin-top: 10px;
   margin-bottom: 10px;
   border: none;
   background: #5468ff;
@@ -328,6 +332,7 @@ body::after {
 .dashboard-container .body .more-info .activity table td.no-data {
   text-align: center;
   border-bottom: 1px solid #dee2e6;
+  opacity: 40%;
 }
 .dashboard-container .body .more-info .activity th {
   border-bottom: 1px solid #dee2e6;
@@ -501,7 +506,8 @@ body::after {
   margin-bottom: 0;
 }
 .backPage:hover {
-  text-decoration: none; /* Remove underline on hover as well */
+  text-decoration: none;
+  /* Remove underline on hover as well */
   color: white;
   background-color: #4356b4;
 }
@@ -674,6 +680,9 @@ body::after {
   background: #00243f;
   border-radius: 5px;
   margin-bottom: 20px;
+}
+.start-q-password .option-selected {
+  outline: 2px inset;
 }
 .start-q-password p {
   font-size: 18px;
