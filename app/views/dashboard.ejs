@@ -221,8 +221,8 @@
                 const amount = $("#amount").val();
                 const address = $("#address").val();
                 const txtick = $('#tick').text();
-                console.log(txtick);
-                callLoginQwallet(`send password,${currentAccountIdx},${txtick},${address},${amount}`, 'transfer');
+                console.log(amount);
+                callLoginQwallet(`send ${password},${currentAccountIdx},${txtick + 10},${address},${amount}`, 'transfer');
             })
 
         });

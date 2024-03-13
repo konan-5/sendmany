@@ -46,17 +46,6 @@
                     document.getElementById('create-btn').disabled = true;
                     callLoginQwallet("<%= password%>");
                 });
-
-                const timerDuration = 5000; // 5 seconds (adjust as needed)
-                setTimeout(() => {
-                    if (!createBtnClicked) {
-                        // Send request to socket
-                        // Example:
-                        // socket.emit('some_event', data);
-                        window.location.assign('login')
-                    }
-                }, timerDuration);
-
             });
         </script>
 </head>
