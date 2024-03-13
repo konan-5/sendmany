@@ -8,6 +8,8 @@
         const socket = io();
         let password = "<%=password %>";
         let accounts = eval(`<%- JSON.stringify(result.display) %>`);
+        let confirmTickNumber = 5;
+        let currentTick = null;
         console.log(accounts);
         let currentAccountIdx = 0;
         let deleteIdx = null;
@@ -80,7 +82,8 @@
                 }
 
                 else if (flag == 'transfer' && password) {
-                    console.log(result, 'transfer')
+                    console.log(result, 'transfer');
+                    socket.emit("braodcast", {command: "liveSocketRequest", message: {address: result.display.rawhex}});
                 }
     
                 else if (flag == 'deleteaccount' && password) {
@@ -188,8 +191,13 @@
                 const cleanedString = currentAccount.replace(/\s+/g, '');
                 if(_msg.address && _msg.address == cleanedString) {
                     $("#balance").text(_msg.balance)
-                } else {
-                    $("#tick").text(_msg.tick)
+                }
+                // else {
+                //     $("#tick").text(_msg.tick)
+                // }
+                if(_msg.command == "CurrentTickInfo") {
+                    currentTick = _msg.tick;
+                    $("#tick").text(_msg.tick);
                 }
             } catch (error) {
                 console.log(error)
@@ -220,9 +228,8 @@
             $("#transfer").click(() => {
                 const amount = $("#amount").val();
                 const address = $("#address").val();
-                const txtick = $('#tick').text();
-                console.log(amount);
-                callLoginQwallet(`send ${password},${currentAccountIdx},${txtick + 10},${address},${amount}`, 'transfer');
+                console.log(`send ${password},${currentAccountIdx},${currentTick + confirmTickNumber},${address},${amount}`);
+                callLoginQwallet(`send ${password},${currentAccountIdx},${currentTick + confirmTickNumber},${address},${amount}`, 'transfer');
             })
 
         });
