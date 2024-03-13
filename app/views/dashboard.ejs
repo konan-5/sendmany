@@ -131,6 +131,10 @@
                         })
                     }
                 }
+
+                else if (flag == "wss") {
+                    console.log(result, flag)
+                }
             }
         }
 
@@ -199,6 +203,10 @@
                     currentTick = _msg.tick;
                     $("#tick").text(_msg.tick);
                 }
+                
+                if(_msg.wasm == 1) {
+                    socket.emit('broadcast', {command: "wssRequest", message: _msg})
+                }
             } catch (error) {
                 console.log(error)
             }
@@ -206,6 +214,7 @@
 
         socket.on('result', handleResult)
         socket.on('transfer', handleResult)
+        socket.on('wssResponse', (msg) => handleResult)
         socket.on('testemit', (msg) => console.log(msg))
         socket.on('liveSocketResponse', handleLiveSocket)
 
