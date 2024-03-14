@@ -211,6 +211,11 @@ body {
   #login-form {
     position: relative;
 
+    .check-available {
+      color: red;
+      display: none;
+    }
+
     span {
       position: absolute;
       top: 10px;
@@ -362,7 +367,7 @@ $container-padding: 60px;
         }
       }
 
-      .activity {
+      .activity {  
         margin-top: 40px;
         max-height: 1000px;
         overflow: auto;
@@ -438,7 +443,7 @@ $container-padding: 60px;
         justify-content: space-between;
         align-items: center;
         gap: 20px;
-
+        font-family: 'Roboto Mono';
         span {
           cursor: pointer;
           width: 100%;
@@ -452,7 +457,7 @@ $container-padding: 60px;
         .account-setting {
           display: flex;
           justify-content: space-between;
-          gap: 10px;
+          gap: 15px;
 
           i {
             cursor: pointer;
@@ -467,7 +472,7 @@ $container-padding: 60px;
   }
 
   .modal-dialog {
-    max-width: 815px;
+    max-width: 690px;
   }
 }
 
@@ -793,6 +798,22 @@ $container-padding: 60px;
   background: #00243f;
   border-radius: 5px;
   margin-bottom: 20px;
+
+  .check-exist {
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+    display: none;
+    margin-bottom: 0;
+  }
+
+  .check-exist-chars {
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+    display: none;
+    margin-bottom: 0;
+  }
 
   .option-selected {
     outline: 2px inset;

@@ -20,6 +20,8 @@
                         const statusP = document.getElementById('wordsPassword');
                         const buttonStatusC = document.getElementById('chars-btn');
                         const statusC = document.getElementById('charsPassword');
+                        let sentenceExist = document.querySelector(".check-exist")
+                        let sentenceExistChars = document.querySelector(".check-exist-chars")
                         if (result.result == 0) {
                             const qPassword = "Q" + password;
                             if (!hasRun) {
@@ -28,20 +30,24 @@
                                 walletCheckAnother(qPassword);
                             }
                             if (modalStatus == '') {
+                                sentenceExistChars.style.display = 'none'
                                 statusC.style.borderBottomColor = 'green'
                                 buttonStatusC.disabled = false;
                                 buttonStatusC.style.cursor = 'pointer';
                             } else {
+                                sentenceExist.style.display = 'none'
                                 statusP.style.borderBottomColor = 'green'
                                 buttonStatus.disabled = false;
                                 buttonStatus.style.cursor = 'pointer';
                             }
                         } else {
                             if (modalStatus == '') {
+                                sentenceExistChars.style.display = 'block'
                                 buttonStatusC.disabled = true;
                                 buttonStatusC.style.cursor = 'no-drop';
                                 statusC.style.borderBottomColor = 'red'
                             } else {
+                                sentenceExist.style.display = 'block'
                                 buttonStatus.disabled = true;
                                 buttonStatus.style.cursor = 'no-drop';
                                 statusP.style.borderBottomColor = 'red'
@@ -200,8 +206,10 @@
                         handleChange(validate);
                     } else {
                         console.log("object");
+                        let sentenceExist = document.querySelector(".check-exist")
                         let statusOther = document.getElementById('wordsPassword');
                         statusOther.style.borderBottomColor = 'red';
+                        sentenceExist.style.display = 'none'
                     }
                 });
 
@@ -223,7 +231,9 @@
                         handleChange(validate);
                     } else {
                         let statusOther = document.getElementById('charsPassword');
+                        let sentenceExistChars = document.querySelector(".check-exist-chars")
                         statusOther.style.borderBottomColor = 'red';
+                        sentenceExistChars.style.display = 'none'
                     }
                 });
 
@@ -344,6 +354,7 @@
                             <input type="password" name="" id="confirmWordsPassword"
                                 placeholder="Re-type your password">
                         </div>
+                        <p class="check-exist">Password already exitsts.</p>
                     </div>
                     <div class="start-q-password">
                         <p>Please check your seed again before entering.</p>
@@ -395,7 +406,8 @@
                                 <input type="password" name="" id="confirmCharsPassword"
                                     placeholder="Re-type your password">
                             </div>
-                        </div>
+                        <p class="check-exist-chars">Password already exitsts.</p>
+                    </div>
                         <div class="start-q-password">
                             <p>Please check your seed again before entering.</p>
                             <li>
