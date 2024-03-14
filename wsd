@@ -1,0 +1,2 @@
+websocketd -devconsole -port=4444 ./qclient
+

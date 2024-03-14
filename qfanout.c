@@ -1,4 +1,4 @@
-    
+
 struct Fanout
 {
     char dests[FAN][FAN][FAN][64],txidsdir[512],origseed[64];
@@ -40,7 +40,7 @@ int32_t calc_iFAN(char *iFAN,int32_t index,int32_t max)
 
 void fanout_addpubkey(struct pubkeypay *payments,int32_t index,char *dest,int64_t amount)
 {
-    getPublicKeyFromIdentity(dest,payments->publickeys[index]);
+    addr2pubkey(dest,payments->publickeys[index]);
     payments->amounts[index] = amount;
 }
 
@@ -332,7 +332,7 @@ struct Fanout *fanout_create(char *origseed,char *fname,int32_t autogenflag)
                     }
                     Paymentamounts[j] = amount;
                     fanout_addpayment(fan,j,dest,amount);
-                    getPublicKeyFromIdentity(dest,pubkey);
+                    addr2pubkey(dest,pubkey);
                     memcpy(Paymentpubkeys[j],pubkey,sizeof(pubkey));
                     balancetickhash(pubkey,latest);
                 }
@@ -362,25 +362,26 @@ struct Fanout *fanout_create(char *origseed,char *fname,int32_t autogenflag)
             fanout_addpayment(fan,i,dest,amount);
             calc_iFAN(iFAN,i,fan->numdests);
             fanout_getdestaddr(fan->numdests,origseed,dest,iFAN,amount);
-            getPublicKeyFromIdentity(dest,pubkey);
+            addr2pubkey(dest,pubkey);
             memcpy(Paymentpubkeys[i],pubkey,sizeof(pubkey));
             balancetickhash(pubkey,latest);
         }
     }
-    fprintf(stderr,"init %d: ",n);
+    fprintf(stderr,"latest.%d init %d: ",latest,n);
     for (j=0; j<n; j++)
         balancetickhash(Paymentpubkeys[j],latest);
     for (j=0; j<n; j++)
     {
         balancetickhash(Paymentpubkeys[j],latest);
-        if ( (j % 100) == 0 )
+        if ( (j % 1000) == 0 )
+        {
             fprintf(stderr,".");
+            //sleep(1);
+        }
         pubkey2addr(Paymentpubkeys[j],dest);
-        Startingbalances[j] = waitforbalance(Paymentpubkeys[j],latest);
+        Startingbalances[j] = waitforbalance(0,Paymentpubkeys[j],latest);
         //printf("%s %s\n",dest,amountstr(Startingbalances[j]));
     }
     printf(" numpayments.%d total %s -> 1st address %s without fees\n",n,amountstr(fan->total),firstaddr);
     return(fan);
 }
-
-    

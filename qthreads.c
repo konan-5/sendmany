@@ -1,4 +1,3 @@
-
 //
 //  txqueue.cpp
 //  fanout
@@ -21,7 +20,7 @@ struct txq_item
     pthread_t txsend_thread,txcheck_thread;
     char senderaddr[64],txidsdir[512],pendingtxid[64],datastr[MAX_INPUT_SIZE*2 + 1],padc;
     int32_t datalen,pendingtick,pendingcheck,epochstart,numpayments,sent,starti,depth,createdtick;
-    int64_t waitforbalance,required,origbalance;
+    int64_t waitforbalance,required,origbalance,origsent;
     uint64_t sendflags;
     struct txq_item *waitfor;
 } *TX_Q[MAXFANS];
@@ -29,7 +28,7 @@ struct txq_item
 struct balancetick
 {
     uint8_t pubkey[32];
-    int64_t balance,balances[3];
+    int64_t balance,outgoing,balances[3],outgoings[3];
     int32_t tick,ticks[3];
     uint32_t ipaddrs[3];
     int32_t index,nexthashi,mintick,extra0,extra1;
@@ -86,7 +85,7 @@ struct balancetick *balancetickhash(uint8_t pubkey[32],int32_t addflag)
     return(0);
 }
 
-int64_t waitforbalance(uint8_t pubkey[32],int32_t mintick)
+int64_t waitforbalance(int64_t *outgoingp,uint8_t pubkey[32],int32_t mintick)
 {
     struct balancetick *bp;
     int32_t i,maxtick;
@@ -116,6 +115,9 @@ int64_t waitforbalance(uint8_t pubkey[32],int32_t mintick)
                     maxtick = bp->ticks[i];
                     bp->tick = maxtick;
                     bp->balance = bp->balances[i];
+                    bp->outgoing = bp->outgoings[i];
+                    if ( outgoingp != 0 )
+                        *outgoingp = bp->outgoing;
                 }
                 else if ( bp->ticks[i] == maxtick )
                 {
@@ -125,6 +127,8 @@ int64_t waitforbalance(uint8_t pubkey[32],int32_t mintick)
             }
         }
     }
+    if ( outgoingp != 0 && bp->outgoing != 0 )
+        *outgoingp = bp->outgoing;
     return(bp->balance);
 }
 
@@ -137,10 +141,11 @@ void *txq_peerloop(void *_ipbytes)
     char ipaddr[16],addr[64];
     uint64_t peermask;
     uint32_t prevutime,iphash;
-    int32_t prevtick,sock,sz,datalen,recvbyte,ptr,bufsize = 2 * 1024 * 1024;
+    int32_t prevtick,sock,sz,datalen,counter,modval,recvbyte,ptr,bufsize = 4 * 1024 * 1024;
     static uint8_t *buf;
     uint8_t reqbuf[MAX_INPUT_SIZE*2],*ipbytes = _ipbytes;
     prevtick = 0;
+    counter = 0;
     prevutime = 0;
     peermask = 1LL << (rand() % 64);
     iphash = *(uint32_t *)ipbytes;
@@ -162,6 +167,8 @@ void *txq_peerloop(void *_ipbytes)
         if ( utime > prevutime ) // optimization: use millisecond offset*peerid
         {
             //printf("%s new utime.%u %d\n",ipaddr,utime,LATEST_TICK);
+            counter++;
+            modval = 1 + (txq_Numbalances / MAXENTITY_PERSECOND);
             prevutime = utime;
             LATEST_UTIME = utime;
             H = quheaderset(REQUEST_CURRENT_TICK_INFO,sizeof(H));
@@ -173,7 +180,7 @@ void *txq_peerloop(void *_ipbytes)
                 while ( bp->index != 0 )
                 {
                     n++;
-                    if ( issued < MAXENTITY_PERSECOND && bp->tick < bp->mintick && (LATEST_TICK == 0 || LATEST_TICK >= bp->mintick) )
+                    if ( /*((n + counter) % modval) == 0 &&*/ issued < MAXENTITY_PERSECOND && bp->tick < bp->mintick && (LATEST_TICK == 0 || LATEST_TICK >= bp->mintick) )
                     {
                         for (i=0; i<(sizeof(bp->ipaddrs)/sizeof(*bp->ipaddrs)); i++)
                         {
@@ -191,7 +198,7 @@ void *txq_peerloop(void *_ipbytes)
                                     H = quheaderset(REQUEST_CURRENT_TICK_INFO,sizeof(H));
                                     sock = socksend(ipaddr,sock,(uint8_t *)&H,sizeof(H));
                                 }
-                                //printf("%s iphash.%x %d req.%d %s ticks[] %d < %d\n",ipaddr,iphash,i,bp->index,addr,bp->ticks[i],bp->mintick);
+                                //printf("%s iphash.%lx %d req.%d %s ticks[] %d < %d\n",ipaddr,(long)peermask,i,bp->index,addr,bp->ticks[i],bp->mintick);
                                 break;
                             }
                             else if ( bp->ipaddrs[i] == iphash )
@@ -248,9 +255,11 @@ void *txq_peerloop(void *_ipbytes)
                             {
                                 bp->ticks[i] = E.tick;
                                 bp->balances[i] = E.entity.incomingAmount - E.entity.outgoingAmount;
+                                bp->outgoings[i] = E.entity.outgoingAmount;
                                 //printf("%s %d %d: %s.%d %s\n",ipaddr,i,bp->index,addr,E.tick,amountstr(E.entity.incomingAmount - E.entity.outgoingAmount));
                                 if ( bp->ticks[i] > bp->tick )
                                 {
+                                    bp->outgoing = bp->outgoings[i];
                                     bp->balance = bp->balances[i];
                                     bp->tick = bp->ticks[i];
                                 }
@@ -283,21 +292,17 @@ void *txq_peerloop(void *_ipbytes)
 void *txq_send(void *_qp) // originally in dedicated thread, but now polled
 {
     struct txq_item *qp = (struct txq_item *)_qp;
-    struct balancetick *bp;
     int64_t required = SENDMANYFEE;
     int32_t i;
     qp->pendingtick = LATEST_TICK + TICKOFFSET;
     for (i=0; i<qp->numpayments; i++)
         required += qp->payments.amounts[i];
     qp->required = required;
-    if ( (bp= balancetickhash(qp->senderpubkey,0)) == 0 || (qp->origbalance= bp->balance) < required )
+    while ( (qp->origbalance= waitforbalance(&qp->origsent,qp->senderpubkey,qp->createdtick)) < required )
     {
-        while ( (qp->origbalance= waitforbalance(qp->senderpubkey,qp->createdtick)) < required )
-        {
-            if ( (rand() % 5) == 0 )
-                printf("%s %s does not have %s\n",qp->senderaddr,amountstr2(qp->origbalance),amountstr(required));
-            usleep(100000);
-        }
+        if ( (rand() % 5) == 0 )
+            printf("%s %s does not have %s\n",qp->senderaddr,amountstr2(qp->origbalance),amountstr(required));
+        usleep(100000);
     }
     qp->datalen = sizeof(qp->payments);
     qp->sent++;
@@ -334,19 +339,20 @@ void *txq_send(void *_qp) // originally in dedicated thread, but now polled
     //sendrawtransaction(randpeer(0),DEFAULT_NODE_PORT,qp->confirmed.rawhex);
 #endif
 
-    waitforbalance(qp->senderpubkey,0);
+    waitforbalance(0,qp->senderpubkey,0);
     return(0);
 }
 
 void txq_check(struct txq_item *qp)
 {
-    int64_t balance;
+    int64_t balance,outgoing;
     char fname[1024];
     FILE *fp;
     //printf("txq_check numpayments.%d datalen.%d %s %s\n",qp->numpayments,qp->datalen,qp->datastr,qp->senderaddr);
-    if ( (balance= waitforbalance(qp->senderpubkey,qp->pendingtick+1)) != (qp->origbalance - qp->required) )
+    balance = waitforbalance(&outgoing,qp->senderpubkey,qp->pendingtick+1);
+    if ( outgoing != (qp->origsent + qp->required) )
     {
-        printf("%s %s failed still has %s orig.%s required.%s\n",qp->senderaddr,qp->pendingtxid,amountstr(balance),amountstr2(qp->origbalance),amountstr3(qp->required));
+        printf("%s %s failed still has %s orig.%s required.%s sent.%s\n",qp->senderaddr,qp->pendingtxid,amountstr(balance),amountstr2(qp->origbalance),amountstr3(qp->required),amountstr4(outgoing - qp->origsent));
         memset(qp->pendingtxid,0,sizeof(qp->pendingtxid));
         qp->pendingtick = 0;
         qp->pendingcheck = 0;
@@ -424,7 +430,7 @@ void *txq_loop(void *threads)
                 printf("now.%d txQ[%d]: pendingtick.%d confirmed.%d sent.%d pendingcheck.%d numpending.%d G.%d F.%d ",LATEST_TICK,i,qp->pendingtick,qp->confirmed.txtick,qp->sent,qp->pendingcheck,numpending,NUMGOOD,NUMFAILS);
                 if ( i == 0 )
                 {
-                    balance = waitforbalance(qp->senderpubkey,0);
+                    balance = waitforbalance(0,qp->senderpubkey,0);
                     if ( qp->required > balance )
                         printf("send %s to %s",amountstr(qp->required - balance),qp->senderaddr);
                 }
@@ -480,9 +486,7 @@ struct txq_item *txq_queuetx(char *txidsdir,uint8_t subseed[32],struct pubkeypay
 
 uint32_t getlatest(void)
 {
-    while ( LATEST_TICK == 0 )
+    while ( LATEST_TICK <= 1 )
         sleep(1);
     return(LATEST_TICK);
 }
-
-    

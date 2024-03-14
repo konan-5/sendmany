@@ -1,4 +1,4 @@
-    
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -33,14 +33,14 @@ int myconnect(const char *nodeIp,int nodePort)
 
 int32_t receiveall(int32_t sock,uint8_t *recvbuf,int32_t maxsize)
 {
-    uint8_t tmp[1024];
+    uint8_t tmp[4096];
     int32_t received=0,recvbyte;
     recvbyte = (int32_t)recv(sock,(char *)tmp,sizeof(tmp),0);
     while ( recvbyte > 0 )
     {
         if ( received + recvbyte > maxsize )
         {
-            printf("receiveall past maxsize.%d received.%d + recvbyte.%d\n",maxsize,received,recvbyte);
+            //printf("receiveall past maxsize.%d received.%d + recvbyte.%d\n",maxsize,received,recvbyte);
             memcpy(&recvbuf[received],tmp,maxsize-received);
             return(maxsize);
         }
@@ -71,21 +71,6 @@ int32_t sendbuffer(int32_t sock,uint8_t *buffer,int sz)
         size -= numberOfBytes;
     }
     return(sz - size);
-}
-
-struct quheader quheaderset(uint8_t type,int32_t size)
-{
-    struct quheader H;
-    memset(&H,0,sizeof(H));
-    H._size[0] = size;
-    H._size[1] = size >> 8;
-    H._size[2] = size >> 16;
-    if ( (H._type= type) != BROADCAST_TRANSACTION )
-    {
-        if ( (H._dejavu= rand()) == 0 )
-            H._dejavu = 1;
-    }
-    return(H);
 }
 
 void *reqresponse(uint8_t *recvbuf,int32_t recvsize,int32_t sock,int32_t type,uint8_t *request,int32_t reqlen,int32_t resptype)
@@ -125,5 +110,3 @@ int32_t socksend(char *ipaddr,int32_t sock,uint8_t *buf,int32_t len)
 }
 
 
-
-    
