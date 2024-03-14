@@ -232,11 +232,6 @@ body {
     font-size: 16px;
   }
 
-  .check-available {
-    color: red;
-    display: none;
-  }
-
   .backup {
     margin-top: 20px;
     text-align: left;
@@ -457,7 +452,7 @@ $container-padding: 60px;
         .account-setting {
           display: flex;
           justify-content: space-between;
-          gap: 5px;
+          gap: 10px;
 
           i {
             cursor: pointer;
@@ -472,7 +467,7 @@ $container-padding: 60px;
   }
 
   .modal-dialog {
-    max-width: 768px;
+    max-width: 815px;
   }
 }
 

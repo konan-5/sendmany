@@ -231,16 +231,35 @@
                     }
                 }
                 const index = accounts.length - count;
-                callLoginQwallet(`login ${password},${index},derivation${index}`, 'addaccount');
+                if(index < 100){
+                    if(index > 20){
+                        document.getElementById('accounts').style.height = '600px'
+                    }
+                    callLoginQwallet(`login ${password},${index},derivation${index}`, 'addaccount');
+                }else{
+                    Toastify({
+                        text: "You can't create more than 100 addresses.",
+                        className: "warning",
+                        style: {
+                            background: "red",
+                            color: "white",
+                        }
+                    }).showToast();
+                }
             });
 
             $("#transfer").click(() => {
                 const amount = $("#amount").val();
                 const address = $("#address").val();
-                console.log(`send ${password},${currentAccountIdx},${currentTick + confirmTickNumber},${address},${amount}`);
                 callLoginQwallet(`send ${password},${currentAccountIdx},${currentTick + confirmTickNumber},${address},${amount}`, 'transfer');
             })
 
+            $('.center').click(() => {
+                console.log("aaa");
+                if(document.querySelectorAll('.account').length > 20){
+                    document.getElementById('accounts').style.height = '600px'
+                }
+            })
         });
     </script>
 </head>
