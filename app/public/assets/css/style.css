@@ -213,10 +213,6 @@ body::after {
   color: #fff;
   font-size: 16px;
 }
-.container .check-available {
-  color: red;
-  display: none;
-}
 .container .backup {
   margin-top: 20px;
   text-align: left;
@@ -297,15 +293,16 @@ body::after {
   margin-right: 5px;
   border: 1.5px solid #17517a;
   border-radius: 5px;
-  width: 80px;
+  width: 120px;
   outline: none;
+  text-align: center;
   background-color: transparent;
 }
 .dashboard-container .body .more-info .send input:focus {
   border-color: #2777b1;
 }
 .dashboard-container .body .more-info .send input.address {
-  width: 500px;
+  width: 720px;
 }
 .dashboard-container .body .more-info .send button {
   outline: none;
@@ -398,7 +395,7 @@ body::after {
 .modal .modal-content .modal-body .account .account-setting {
   display: flex;
   justify-content: space-between;
-  gap: 5px;
+  gap: 10px;
 }
 .modal .modal-content .modal-body .account .account-setting i {
   cursor: pointer;
@@ -407,7 +404,7 @@ body::after {
   color: red;
 }
 .modal .modal-dialog {
-  max-width: 768px;
+  max-width: 815px;
 }
 
 .delete-account-modal {

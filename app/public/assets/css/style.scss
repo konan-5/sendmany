@@ -232,11 +232,6 @@ body {
     font-size: 16px;
   }
 
-  .check-available {
-    color: red;
-    display: none;
-  }
-
   .backup {
     margin-top: 20px;
     text-align: left;
@@ -336,8 +331,9 @@ $container-padding: 60px;
           margin-right: 5px;
           border: 1.5px solid #17517a;
           border-radius: 5px;
-          width: 80px;
+          width: 120px;
           outline: none;
+          text-align: center;
           background-color: transparent;
 
           &:focus {
@@ -346,7 +342,7 @@ $container-padding: 60px;
         }
 
         input.address {
-          width: 500px;
+          width: 720px;
         }
 
         button {
@@ -456,7 +452,7 @@ $container-padding: 60px;
         .account-setting {
           display: flex;
           justify-content: space-between;
-          gap: 5px;
+          gap: 10px;
 
           i {
             cursor: pointer;
@@ -471,7 +467,7 @@ $container-padding: 60px;
   }
 
   .modal-dialog {
-    max-width: 768px;
+    max-width: 815px;
   }
 }
 
@@ -845,12 +841,3 @@ $container-padding: 60px;
     }
   }
 }
-
-// #create-btn {
-//   background-color: #6635b3;
-//   margin-top: 5px;
-
-//   &:hover {
-//     background-color: #4c2a85;
-//   }
-// }
