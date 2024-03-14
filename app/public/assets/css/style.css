@@ -195,6 +195,10 @@ body::after {
 .container #login-form {
   position: relative;
 }
+.container #login-form .check-available {
+  color: red;
+  display: none;
+}
 .container #login-form span {
   position: absolute;
   top: 10px;
@@ -383,6 +387,7 @@ body::after {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
+  font-family: "Roboto Mono";
 }
 .modal .modal-content .modal-body .account span {
   cursor: pointer;
@@ -395,7 +400,7 @@ body::after {
 .modal .modal-content .modal-body .account .account-setting {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: 15px;
 }
 .modal .modal-content .modal-body .account .account-setting i {
   cursor: pointer;
@@ -404,7 +409,7 @@ body::after {
   color: red;
 }
 .modal .modal-dialog {
-  max-width: 815px;
+  max-width: 690px;
 }
 
 .delete-account-modal {
@@ -677,6 +682,20 @@ body::after {
   background: #00243f;
   border-radius: 5px;
   margin-bottom: 20px;
+}
+.start-q-password .check-exist {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+  display: none;
+  margin-bottom: 0;
+}
+.start-q-password .check-exist-chars {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+  display: none;
+  margin-bottom: 0;
 }
 .start-q-password .option-selected {
   outline: 2px inset;

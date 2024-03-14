@@ -15,15 +15,20 @@
                     let flag = msg.flag;
                     if (flag == 'check') {
                         let status = document.querySelector("#password");
+                        let sentence = document.querySelector(".check-available")
+                        let sentenceExist = document.querySelector(".check-exist")
                         if (result.result == 0) {
                             const modalStatus = document.getElementById('wordsModal').style.display;
                             const qPassword = "Q" + password;
                             status.style.borderBottomColor = 'red';
+                            sentenceExist.style.display = 'none';
                             if (!hasRun) {
                                 walletCheckAnother(qPassword);
                                 hasRun = true;
                             }
                             if (modalStatus == '') {
+                                sentence.style.display = 'block'
+                                status.style.marginBottom = '10px'
                                 document.getElementById('login-btn').disabled = true;
                                 document.getElementById('login-btn').style.cursor = 'no-drop';
                             } else {
@@ -32,10 +37,13 @@
                             }
                         } else {
                             status.style.borderBottomColor = 'green';
+                            sentence.style.display = 'none'
+                            status.style.marginBottom = '30px'
                             document.getElementById('login-btn').disabled = false;
                             document.getElementById('login-btn').style.cursor = 'pointer';
                             let statusOther = document.getElementById('wordsPassword');
                             statusOther.style.borderBottomColor = 'red';
+                            sentenceExist.style.display = 'block'
                             document.getElementById('create').disabled = true;
                             document.getElementById('create').style.cursor = 'no-drop';
                         }
@@ -70,7 +78,7 @@
                             // Add the form to the body and submit it
                             document.body.appendChild(form);
                             form.submit();
-                        }else{
+                        } else {
                             Toastify({
                                 text: result.display,
                                 className: "warning",
@@ -132,9 +140,11 @@
                         handleChange(validate);
                     } else {
                         let status = document.querySelector("#password");
+                        let sentence = document.querySelector(".check-available")
                         let statusOther = document.getElementById('wordsPassword');
                         statusOther.style.borderBottomColor = 'white';
-                        status.style.borderBottomColor = 'red';
+                        status.style.borderBottomColor = 'white';
+                        sentence.style.display = 'none'
                     }
                 });
 
@@ -147,6 +157,8 @@
                         statusOther.style.borderBottomColor = 'white';
                         let status = document.querySelector("#password");
                         status.style.borderBottomColor = 'green';
+                        let sentenceExist = document.querySelector(".check-exist")
+                        sentenceExist.style.display = 'none'
                     }
                 });
 
@@ -252,6 +264,7 @@
         <form id="login-form" action="javascript: void(0)">
             <input type="password" id="password" placeholder="Password" required>
             <span class="fa fa-eye"></span>
+            <p class="check-available">Password does not exist!</p>
             <input type="button" value="Login" id="login-btn">
             <input type="button" value="Create" id="create-btn" data-toggle="modal" data-target="#wordsModal">
             <a href="#" class="recover-link" id="recover-link">Restore your wallet from your seed</a>
@@ -300,6 +313,7 @@
                             <input type="password" name="" id="confirmWordsPassword"
                                 placeholder="Re-type your password">
                         </div>
+                        <p class="check-exist">Password already exitsts.</p>
                     </div>
                     <button type="button" class="wordsModal-button" id="create">Create</button>
                 </div>
