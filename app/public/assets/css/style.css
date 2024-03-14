@@ -409,7 +409,7 @@ body::after {
   color: red;
 }
 .modal .modal-dialog {
-  max-width: 690px;
+  max-width: 720px;
 }
 
 .delete-account-modal {
