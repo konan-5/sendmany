@@ -10,11 +10,10 @@
         let accounts = eval(`<%- JSON.stringify(result.display) %>`);
         let confirmTickNumber = 5;
         let currentTick = null;
-        console.log(accounts);
         let currentAccountIdx = 0;
         let deleteIdx = null;
-        socket.emit('broadcast', { command: 'liveSocketRequest', message: {data: accounts[0], flag: "address"} })
 
+        socket.emit('broadcast', { command: 'liveSocketRequest', message: {data: accounts[0], flag: "address"} })
         function delay(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
@@ -64,6 +63,7 @@
                         }
                         const index = accounts.length - count;
                         accounts[index] = result.display
+                        socket.emit('broadcast', { command: 'liveSocketRequest', message: {data: result.display, flag: "address"} })
                         $("#accounts").append(
                             `
                             <div class="account" id="account${index}">
@@ -109,8 +109,9 @@
                             url: 'postCheckAccount',
                             data: { accounts }
                         })
-                        .done((data) => {
+                        .done(async (data) => {
                             accounts.map((account, idx) => {
+                                console.log(account)
                                 if(account != "") {
                                     $("#accounts").append(
                                         `
@@ -125,6 +126,11 @@
                                     )
                                 }
                             })
+
+                            for(let idx = 0; idx < accounts.length; idx ++) {
+                                await delay(100)
+                                socket.emit('broadcast', { command: 'liveSocketRequest', message: {data: accounts[idx], flag: "address"} })
+                            }
                         })
                         .fail((error) => {
                             console.log(error)
