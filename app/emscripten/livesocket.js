@@ -28,8 +28,9 @@ liveSocket.onmessage = function (event) {
         let endTime = performance.now();
         console.log(addressStartTime)
         for (let address in addressStartTime) {
-            if (endTime > addressStartTime[address] + 6000) {
+            if (endTime > addressStartTime[address] + 60000) {
                 console.log(address, 1)
+                addressStartTime[address] = performance.now()
                 liveSocket.send(address)
             }
         }
@@ -40,8 +41,6 @@ liveSocket.onmessage = function (event) {
             if (data.address) {
                 addressStartTime[data.address] = performance.now()
             }
-        console.log(addressStartTime)
-        // console.log(data, "ddddddddddddddddddddd")
         } catch (error) {
 
         }
@@ -57,23 +56,26 @@ liveSocket.on('close', () => {
     console.log("Disconnected from the server");
 });
 
-// setInterval(() => {
-//     let endTime = performance.now();
-//     // console.log(endTime,"endTime", addressStartTime, "addressstarttime")
-//     for (let address in addressStartTime) {
-//         if (endTime > addressStartTime[address] + 60000) {
-//             console.log(address, 2)
-//             liveSocket.send(address)
-//         }
-//     }
-// }, 1000);
+setInterval(() => {
+    let endTime = performance.now();
+    // console.log(endTime,"endTime")
+    for (let address in addressStartTime) {
+        if (endTime > addressStartTime[address] + 60000) {
+            console.log(address, 2)
+            addressStartTime[address] = performance.now()
+            liveSocket.send(address)
+        }
+    }
+}, 1000);
 
 socket.on('liveSocketRequest', async (message) => {
     if (addressStartTime[message.data] && message.flag == "address") {
-        // console.log('Already sent this address')
+        console.log('Already sent this address')
     } else {
+        console.log(message.data);
         if (message.data != "" && message.flag == "address" && message.data != 'status') {
             console.log(message.data, 3)
+            addressStartTime[message.data] = performance.now()
             liveSocket.send(message.data);
         } else if (message.data != '' && message.flag == 'transfer') {
             console.log(message.data)
