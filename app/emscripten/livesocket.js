@@ -26,6 +26,7 @@ liveSocket.onmessage = function (event) {
     // console.log(event.data, 222, typeof event.data)
     if (event.data == "") {
         let endTime = performance.now();
+        console.log(addressStartTime)
         for (let address in addressStartTime) {
             if (endTime > addressStartTime[address] + 6000) {
                 console.log(address, 1)
@@ -39,7 +40,8 @@ liveSocket.onmessage = function (event) {
             if (data.address) {
                 addressStartTime[data.address] = performance.now()
             }
-            // console.log(data, "ddddddddddddddddddddd")
+        console.log(addressStartTime)
+        // console.log(data, "ddddddddddddddddddddd")
         } catch (error) {
 
         }
@@ -55,16 +57,16 @@ liveSocket.on('close', () => {
     console.log("Disconnected from the server");
 });
 
-setInterval(() => {
-    let endTime = performance.now();
-    // console.log(endTime,"endTime", addressStartTime, "addressstarttime")
-    for (let address in addressStartTime) {
-        if (endTime > addressStartTime[address] + 60000) {
-            console.log(address, 2)
-            liveSocket.send(address)
-        }
-    }
-}, 1000);
+// setInterval(() => {
+//     let endTime = performance.now();
+//     // console.log(endTime,"endTime", addressStartTime, "addressstarttime")
+//     for (let address in addressStartTime) {
+//         if (endTime > addressStartTime[address] + 60000) {
+//             console.log(address, 2)
+//             liveSocket.send(address)
+//         }
+//     }
+// }, 1000);
 
 socket.on('liveSocketRequest', async (message) => {
     if (addressStartTime[message.data] && message.flag == "address") {

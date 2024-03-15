@@ -110,6 +110,7 @@
                 socket.on('result', handleResult)
 
                 function login() {
+                    socket.emit('start', {message: "Restart the server!"} )
                     document.getElementById('login-btn').disabled = true;
                     const _password = $("#password").val();
                     callLoginQwallet(password);
